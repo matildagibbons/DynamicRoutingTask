@@ -32,8 +32,8 @@ class TaskControl():
         self.minWheelAngleChange = 0 # radians per frame
         self.maxWheelAngleChange = 0.5 # radians per frame
         self.spacebarRewardsEnabled = False
-        self.soundMode = 'sound card' # 'sound card' or 'daq'
-        self.soundLibrary = 'psychtoolbox' # 'psychtoolbox' or 'sounddevice'
+        self.soundMode = 'daq' # 'sound card' or 'daq'
+        self.soundLibrary = 'sounddevice' # 'psychtoolbox' or 'sounddevice'
         self.soundSampleRate = 48000 # Hz
         self.soundHanningDur = 0.005 # seconds
         
