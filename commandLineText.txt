@@ -1,0 +1,2 @@
+conda activate DynamicRoutingTaskDev
+python "C:\Users\teenspirit\Documents\GitHub\DynamicRoutingTask\TaskControl.py" "C:\Users\teenspirit\Documents\GitHub\DynamicRoutingTask\taskParams.json"

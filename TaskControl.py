@@ -5,7 +5,7 @@ Superclass for behavioral task control
 """
 
 from __future__ import division
-import itertools, json, math, os, random, sys, time, datetime
+import datetime, glob, json, math, os, sys, time
 from threading import Timer
 import h5py
 import numpy as np
@@ -32,8 +32,8 @@ class TaskControl():
         self.minWheelAngleChange = 0 # radians per frame
         self.maxWheelAngleChange = 0.5 # radians per frame
         self.spacebarRewardsEnabled = False
-        self.soundMode = 'daq' # 'sound card' or 'daq'
-        self.soundLibrary = 'sounddevice' # 'psychtoolbox' or 'sounddevice'
+        self.soundMode = 'sound card' # 'sound card' or 'daq'
+        self.soundLibrary = 'psychtoolbox' # 'psychtoolbox' or 'sounddevice'
         self.soundSampleRate = 48000 # Hz
         self.soundHanningDur = 0.005 # seconds
         
@@ -43,6 +43,7 @@ class TaskControl():
         self.monWidth = 52.0 # cm
         self.monDistance = 15.3 # cm
         self.monGamma = 2.3 # float or None
+        self.gammaErrorPolicy = 'raise'
         self.monSizePix = (1920,1200)
         self.warp = None # 'spherical', 'cylindrical', 'warpfile', None
         self.warpFile = None
@@ -73,11 +74,12 @@ class TaskControl():
         
         if params is not None:
             self.rigName = params['rigName']
+            self.githubTaskScript = params['GHTaskScriptParams']['taskScript'] if 'GHTaskScriptParams' in params else None
+            self.optoParamsPath = params['optoParamsPath'] if 'optoParamsPath' in params else None
             if 'configPath' in params:
                 self.startTime = params['startTime']
                 self.saveDir = None
                 self.savePath = params['savePath']
-                self.githubTaskScript = params['GHTaskScriptParams']['taskScript'] if 'GHTaskScriptParams' in params else None
                 self.computerName = params['computerName']
                 self.configPath = params['configPath']
                 self.rotaryEncoderSerialPort = params['rotaryEncoderSerialPort']
@@ -93,7 +95,6 @@ class TaskControl():
                 self.initAccumulatorInterface(params)
             else:
                 self.saveDir = r"\\allen\programs\mindscope\workgroups\dynamicrouting\DynamicRoutingTask\Data"
-                self.githubTaskScript = None
                 self.computerName = None
                 self.configPath = None
                 self.rewardVol = None
@@ -140,7 +141,8 @@ class TaskControl():
                         self.rotaryEncoderSerialPort = 'COM3'
                         self.solenoidOpenTime = 0.03 # 2.54 uL 5/24/2023
                         self.soundCalibrationFit = (25.87774455245642,-2.5151852106916355,57.58077780177194)
-                        # self.optoChannels = {'led_1': (0,None), 'led_2': (1,None)}
+                        self.optoNidaqDevice = 'Dev3'
+                        self.optoChannels = {'led_1': (0,np.nan), 'led_2': (1,np.nan)}
                     elif self.rigName == 'B3':
                         self.rotaryEncoderSerialPort = 'COM3'
                         self.solenoidOpenTime = 0.035 # 2.48 uL 5/24/2023
@@ -203,6 +205,20 @@ class TaskControl():
                     elif self.rigName == 'F6':
                         self.rotaryEncoderSerialPort = 'COM4'
                         self.soundCalibrationFit = (28.655615630746905,-3.5166732104004796,61.36404105849515)
+                elif self.rigName == 'Tilda':
+                    self.saveDir = None
+                    self.screen = 0
+                    self.monWidth = 52.0
+                    self.monDistance = 15.3
+                    self.monGamma = None
+                    self.gammaErrorPolicy = 'warn'
+                    self.monSizePix = (1920,1200)
+                    self.rotaryEncoder = None
+                    self.behavNidaqDevice = None
+                    self.rewardLine = None
+                    self.lickLine = None
+                    self.soundNidaqDevice = 'Dev1'
+                    self.soundChannel = 0
                 else:
                     raise ValueError(self.rigName + ' is not a recognized rig name')
                 
@@ -263,7 +279,8 @@ class TaskControl():
                                   screen=self.screen,
                                   fullscr=True,
                                   units='pix',
-                                  color=self.monBackgroundColor)
+                                  color=self.monBackgroundColor,
+                                  gammaErrorPolicy=self.gammaErrorPolicy)
         self._warper = Warper(self._win,warp=self.warp,warpfile=self.warpFile)
         for _ in range(10):
             self._win.flip()
@@ -386,11 +403,10 @@ class TaskControl():
                         if not os.path.exists(saveDir):
                             os.makedirs(saveDir)
                         self.savePath = os.path.join(saveDir,self.__class__.__name__ + '_' + subjName + self.startTime + '.hdf5')
-                fileOut = h5py.File(self.savePath,'w')
-                saveParameters(fileOut,self.__dict__)
-                if self.saveFrameIntervals and self._win is not None:
-                    fileOut.create_dataset('frameIntervals',data=self._win.frameIntervals)
-                fileOut.close()
+                with h5py.File(self.savePath,'w') as fileOut:
+                    saveParameters(fileOut,self.__dict__)
+                    if self.saveFrameIntervals and self._win is not None:
+                        fileOut.create_dataset('frameIntervals',data=self._win.frameIntervals)
             self.startTime = None
         
     
@@ -466,9 +482,10 @@ class TaskControl():
     
     
     def stopNidaqDevice(self):
-        if hasattr(self,'_optoVoltage'):
+        if hasattr(self,'_optoOutput'):
             self.optoOff()
         for task in self._nidaqTasks:
+            # task.stop()
             task.close()
         for devName in self.networkNidaqDevices:
             nidaqmx.system.device.Device(devName).unreserve_network_device()
@@ -496,11 +513,12 @@ class TaskControl():
             self.deltaWheelPos.append(self.calculateWheelChange())
         
         # digital
-        if self._lickInput.read():
-            self._lick = True
-            self.lickFrames.append(self._sessionFrame)
-        else:
-            self._lick = False
+        if hasattr(self,'_lickInput'):
+            if self._lickInput.read():
+                self._lick = True
+                self.lickFrames.append(self._sessionFrame)
+            else:
+                self._lick = False
 
 
     def calculateWheelChange(self):
@@ -686,7 +704,11 @@ class TaskControl():
     
     
     def dBToVol(self,dB,a,b,c):
-        return math.log(1 - ((dB - c) / a)) / b
+        return np.log(1 - ((dB - c) / a)) / b
+    
+
+    def volTodB(self,vol,a,b,c):
+        return a * (1 - np.exp(vol * b)) + c
     
     
     def initOpto(self):
@@ -703,25 +725,52 @@ class TaskControl():
             self._nidaqTasks.append(self._optoOutput)
 
 
-    def getOptoParams(self):
-        from OptoParams import optoParams, getBregmaGalvoCalibrationData, bregmaToGalvo, getOptoPowerCalibrationData, powerToVolts
-
-        if len(self.optoRegions) == 0:
-            self.optoRegions = [region for region in optoParams[self.subjectName] if optoParams[self.subjectName][region]['use']] 
+    def getOptoParams(self,allowMultipleValsPerDev=False):
+        import OptoParams
         
-        self.bregmaGalvoCalibrationData = getBregmaGalvoCalibrationData(self.rigName)
-        if len(self.galvoVoltage) == 0:
-            self.optoBregma = [optoParams[self.subjectName][region]['bregma'] for region in self.optoRegions]
-            self.galvoVoltage = [bregmaToGalvo(self.bregmaGalvoCalibrationData,x,y) for x,y in self.optoBregma]
+        if self.optoParamsPath is None:
+            dirPath = r"\\allen\programs\mindscope\workgroups\dynamicrouting\DynamicRoutingTask\OptoGui\optoParams"
+            filePaths = glob.glob(os.path.join(dirPath,'optoParams_'+self.subjectName+'_'+self.rigName+'*.txt'))
+            saveTimes = [time.strptime(f[-19:-4],'%Y%m%d_%H%M%S') for f in filePaths]
+            self.optoParamsPath = [z[0] for z in sorted(zip(filePaths,saveTimes),key=lambda i: i[1])][-1]
         
-        self.optoPowerCalibrationData = getOptoPowerCalibrationData(self.rigName,self.optoDevName)
-        self.optoOffsetVoltage = self.optoPowerCalibrationData['offsetV']
-        if len(self.optoVoltage) == 0:
-            self.optoPower = [optoParams[self.subjectName][region]['power'] for region in self.optoRegions]
-            if self.optoSinFreq > 0:
-                self.optoVoltage = [powerToVolts(self.optoPowerCalibrationData,pwr*2) for pwr in self.optoPower]
-            else:
-                self.optoVoltage = [powerToVolts(self.optoPowerCalibrationData,pwr) for pwr in self.optoPower]
+        with open(self.optoParamsPath,'r') as f:
+            cols = zip(*[line.strip('\n').split('\t') for line in f.readlines()])
+        self.optoParams = {d[0]: d[1:] for d in cols}
+        for key,vals in self.optoParams.items():
+            if key == 'device':
+                self.optoParams[key] = [val.split(',') for val in vals]
+            elif key in ('probability','dwell time'):
+                self.optoParams[key] = [float(val) for val in vals]
+            elif key == 'onset frame':
+                self.optoParams[key] = [int(val) for val in vals]
+            elif key in ('bregmaX','bregmaY','power','frequency','delay','duration','on ramp','off ramp'):
+                self.optoParams[key] = [np.array([float(v) for v in val.split(',')]) for val in vals]
+        for key in ('power','frequency','delay','duration','on ramp','off ramp'):
+            for i,(dev,val) in enumerate(zip(self.optoParams['device'],self.optoParams[key])):
+                if len(val) == 1 and  len(dev) > 1:
+                    self.optoParams[key][i] = np.array([val[0]] * len(dev))
+                elif not allowMultipleValsPerDev and len(dev) == 1 and len(val) > 1:
+                    self.optoParams[key][i] = np.array([val[0]])
+        
+        if self.galvoChannels is None:
+            self.optoParams['galvoVoltage'] = np.full((len(self.optoParams['label']),1,2),np.nan)
+        else:
+            self.bregmaGalvoCalibrationData = OptoParams.getBregmaGalvoCalibrationData(self.rigName)
+            self.optoParams['galvoVoltage'] = [np.array([OptoParams.bregmaToGalvo(self.bregmaGalvoCalibrationData,x,y) for x,y in zip(bregmaX,bregmaY)])
+                                               for bregmaX,bregmaY in zip(self.optoParams['bregmaX'],self.optoParams['bregmaY'])]
+        
+        devNames = set(d for dev in self.optoParams['device'] for d in dev)
+        self.optoPowerCalibrationData = {dev: OptoParams.getOptoPowerCalibrationData(self.rigName,dev) for dev in devNames}
+        self.optoOffsetVoltage = {dev: self.optoPowerCalibrationData[dev]['offsetV'] for dev in self.optoPowerCalibrationData}
+        self.optoParams['optoVoltage'] = []
+        for devs,pwrs,freqs in zip(self.optoParams['device'],self.optoParams['power'],self.optoParams['frequency']):
+            self.optoParams['optoVoltage'].append([])
+            for dev,pwr,freq in zip(devs,pwrs,freqs):
+                if freq > 0:
+                    pwr = pwr * 2
+                self.optoParams['optoVoltage'][-1].append(OptoParams.powerToVolts(self.optoPowerCalibrationData[dev],pwr))
+            self.optoParams['optoVoltage'][-1] = np.array(self.optoParams['optoVoltage'][-1])
     
 
     def optoOn(self,devices,amps,ramp=0,x=None,y=None):
@@ -734,7 +783,7 @@ class TaskControl():
         self.applyOptoWaveform(devices,waveforms)
     
     
-    def getOptoPulseWaveform(self,amp,dur=0,freq=0,onRamp=0,offRamp=0,offset=0,lastVal=0):
+    def getOptoPulseWaveform(self,amp,dur=0,delay=0,freq=0,onRamp=0,offRamp=0,offset=0,lastVal=0):
         sampleRate = self._optoOutput.timing.samp_clk_rate
         nSamples = int((dur + onRamp + offRamp) * sampleRate) + 1
         if nSamples < 2:
@@ -749,11 +798,13 @@ class TaskControl():
             waveform[:-1] = amp
         waveform[-1] = lastVal
         if onRamp > 0:
-            ramp = np.linspace(offset,1,int(onRamp * sampleRate))
+            ramp = np.linspace(offset,1,int(onRamp*sampleRate))
             waveform[:ramp.size] *= ramp
         if offRamp > 0:
-            ramp = np.linspace(1,offset,int(offRamp * sampleRate))
+            ramp = np.linspace(1,offset,int(offRamp*sampleRate))
             waveform[-(ramp.size+1):-1] *= ramp
+        if delay > 0:
+            waveform = np.concatenate((np.zeros(int(delay*sampleRate)),waveform))
         return waveform
 
 
@@ -768,7 +819,7 @@ class TaskControl():
         for dev,waveform in zip(optoDevices,optoWaveforms):
             channels = self.optoChannels[dev]
             output[channels[0],:waveform.size] = waveform
-            if channels[1] is not None:
+            if not np.isnan(channels[1]):
                 output[channels[1],output[channels[0]]>0] = 5
         self._optoOutput.write(output,auto_start=True)
         self._optoOutputVoltage = output[:,-1]
@@ -894,81 +945,6 @@ class SpontaneousRewards(TaskControl):
                         self._rewardSound = True
                 else:
                     self._continueSession = False
-            self.showFrame()
-            
-            
-class OptoTagging(TaskControl):
-    
-    def __init__(self,params,devName='laser_488',trialsPerType=30,power=[5],dur=[0.01,0.2],onRamp=0.001,offRamp=0.001,interval=60,intervalJitter=6):
-        TaskControl.__init__(self,params)
-        
-        self.optoDevName = devName
-        self.trialsPerType = trialsPerType
-        self.optoPower = power
-        self.optoDur = dur
-        self.optoOnRamp = onRamp
-        self.optoOffRamp = offRamp
-        self.optoInterval = interval
-        self.optoIntervalJitter = intervalJitter
-        
-        from OptoParams import getBregmaGalvoCalibrationData, bregmaToGalvo, getOptoPowerCalibrationData, powerToVolts
-
-        self.bregmaGalvoCalibrationData = getBregmaGalvoCalibrationData(self.rigName)
-        self.optoPowerCalibrationData = getOptoPowerCalibrationData(self.rigName,self.optoDevName)
-        self.optoOffsetVoltage = self.optoPowerCalibrationData['offsetV']
-
-        with open(params['optoTaggingLocs'],'r') as f:
-            cols = zip(*[line.strip('\n').split('\t') for line in f.readlines()]) 
-        self.optoTaggingLocs = {}
-        for d in cols:
-            if d[0] == 'label':
-                self.optoTaggingLocs[d[0]] = [s for s in d[1:]]
-            else:
-                self.optoTaggingLocs[d[0]] = [float(s) for s in d[1:]]
-        
-        self.optoBregma = [(x,y) for x,y in zip(self.optoTaggingLocs['X'],self.optoTaggingLocs['Y'])]
-        self.galvoVoltage = [bregmaToGalvo(self.bregmaGalvoCalibrationData,x,y) for x,y in self.optoBregma]
-        
-        self.optoVoltage = [powerToVolts(self.optoPowerCalibrationData,pwr) for pwr in self.optoPower]
-        
-    def taskFlow(self):
-
-        params = self.trialsPerType * list(itertools.product(self.optoDur,self.optoVoltage,self.galvoVoltage))
-        random.shuffle(params)
-        trial = -1
-        interval = 5 * self.optoInterval
-        
-        self.trialOptoOnsetFrame = []
-        self.trialOptoDur = []
-        self.trialOptoVoltage = []
-        self.trialGalvoVoltage = []
-
-        while self._continueSession:
-            self.getInputData()
-            
-            if self._trialFrame == interval:
-                if trial < len(params):
-                    trial += 1
-                    self._trialFrame = 0
-                    interval = self.optoInterval + random.randint(0,self.optoIntervalJitter)
-                    
-                    dur,optoVoltage,galvoVoltage = params[trial]
-                    
-                    self.trialOptoOnsetFrame.append(self._sessionFrame)
-                    self.trialOptoDur.append(dur)
-                    self.trialOptoVoltage.append(optoVoltage)
-                    self.trialGalvoVoltage.append(galvoVoltage)
-                    
-                    galvoX,galvoY = galvoVoltage
-                    optoWaveform = self.getOptoPulseWaveform(amp=optoVoltage,
-                                                             dur=dur,
-                                                             onRamp=self.optoOnRamp,
-                                                             offRamp=self.optoOffRamp,
-                                                             offset=self.optoOffsetVoltage)
-                    self._opto = [optoWaveform,galvoX,galvoY]
-                else:
-                    self._continueSession = False
-
             self.showFrame()
 
 
@@ -1161,13 +1137,12 @@ def saveParameters(group,paramDict):
                             for i,v in enumerate(val):
                                 val[i] = str(v)
                         group.create_dataset(key,data=np.array(val,dtype=object),dtype=h5py.special_dtype(vlen=str)) 
-                    elif (isinstance(val,(list,tuple,np.ndarray)) and len(val) > 0 and
-                          all(isinstance(d,(list,tuple,np.ndarray)) for d in val) and [len(d) for d in val].count(len(val[0])) != len(val)):
+                    elif isVariableLengthSequence(val):
                         group.create_dataset(key,data=np.array(val,dtype=object),dtype=h5py.special_dtype(vlen=float))
                     else:
                         group.create_dataset(key,data=val)
                 except:
-                    print('\n' + 'could not save ' + key)            
+                    print('\n' + 'could not save ' + key)   
 
 
 def isStringSequence(obj):
@@ -1175,7 +1150,15 @@ def isStringSequence(obj):
         all((isinstance(d,str) or isStringSequence(d)) for d in obj)):
         return True
     else:
-        return False          
+        return False  
+
+
+def isVariableLengthSequence(obj):
+    if (isinstance(obj,(list,tuple,np.ndarray)) and len(obj) > 0 and
+        all(isinstance(d,(list,tuple,np.ndarray)) for d in obj) and [len(d) for d in obj].count(len(obj[0])) != len(obj)):
+        return True
+    else:
+        return False       
 
                     
 if __name__ == "__main__":
@@ -1249,11 +1232,6 @@ if __name__ == "__main__":
         task.monBackgroundColor = -1
         if 'rewardSound' in params:
             task.rewardSound = params['rewardSound']
-        task.maxFrames = 10 * 3600
-        task.start(params['subjectName'])
-    elif params['taskVersion'] == 'optotagging':
-        task = OptoTagging(params,trialsPerType=25)
-        task.monBackgroundColor = -1
         task.maxFrames = 10 * 3600
         task.start(params['subjectName'])
     else:
