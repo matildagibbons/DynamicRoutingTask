@@ -13,7 +13,6 @@ import scipy.signal
 from psychopy import monitors, visual, event
 from psychopy.visual.windowwarp import Warper
 import psychtoolbox.audio
-import sounddevice
 import nidaqmx
 import serial
 
@@ -33,7 +32,6 @@ class TaskControl():
         self.maxWheelAngleChange = 0.5 # radians per frame
         self.spacebarRewardsEnabled = False
         self.soundMode = 'sound card' # 'sound card' or 'daq'
-        self.soundLibrary = 'psychtoolbox' # 'psychtoolbox' or 'sounddevice'
         self.soundSampleRate = 48000 # Hz
         self.soundHanningDur = 0.005 # seconds
         
@@ -116,7 +114,14 @@ class TaskControl():
                     if self.rigName == 'NP2':
                         self.rotaryEncoderSerialPort = 'COM5'
                         self.solenoidOpenTime = 0.06 # 2.6 uL
-                        self.soundCalibrationFit = (33.17940258725825,-5.040610266883152,56.936135475568065)
+                        self.networkNidaqDevices = ['zcDAQ9185-217ED8B']
+                        self.soundMode = 'daq'
+                        self.soundNidaqDevice = 'zcDAQ1Mod1'
+                        self.soundChannel = 0
+                        self.soundCalibrationFit = (25.093390121902374,-1.9463071513387353,54.211329423853485)
+                        self.optoNidaqDevice = 'zcDAQ9185-217ED8BMod4'
+                        self.galvoChannels = (0,1)
+                        self.optoChannels = {'laser_488': (2,3)}
                     elif self.rigName == 'NP3':
                         self.rotaryEncoderSerialPort = 'COM3'
                         self.solenoidOpenTime = 0.03
@@ -131,7 +136,7 @@ class TaskControl():
                 elif self.rigName in ('B1','B2','B3','B4','B5','B6'):
                     self.behavNidaqDevice = 'Dev1'
                     self.rewardLine = (0,7)
-                    self.rewardSoundLine = (2,0)
+                    self.rewardSoundLine = None
                     self.lickLine = (0,0)
                     if self.rigName == 'B1':
                         self.rotaryEncoderSerialPort = 'COM3'
@@ -358,11 +363,11 @@ class TaskControl():
                 self._acquisitionSignalOutput.write(False)
 
         if self._sound:
-            self.playSound(self._sound[0])
+            self.startSound()
             self._sound = False
 
         if self._opto:
-            self.applyOptoWaveform(*self._opto)
+            self.startOpto()
             self._opto = False
         
         if self._reward:
@@ -454,11 +459,12 @@ class TaskControl():
             self._nidaqTasks.append(self._rewardOutput)
             
             # reward sound device
-            self._rewardSoundOutput = nidaqmx.Task()
-            self._rewardSoundOutput.do_channels.add_do_chan(self.behavNidaqDevice+'/port'+str(self.rewardSoundLine[0])+'/line'+str(self.rewardSoundLine[1]),
-                                                            line_grouping=nidaqmx.constants.LineGrouping.CHAN_PER_LINE)
-            self._rewardSoundOutput.write(False)
-            self._nidaqTasks.append(self._rewardSoundOutput)
+            if self.rewardSoundLine is not None:
+                self._rewardSoundOutput = nidaqmx.Task()
+                self._rewardSoundOutput.do_channels.add_do_chan(self.behavNidaqDevice+'/port'+str(self.rewardSoundLine[0])+'/line'+str(self.rewardSoundLine[1]),
+                                                                line_grouping=nidaqmx.constants.LineGrouping.CHAN_PER_LINE)
+                self._rewardSoundOutput.write(False)
+                self._nidaqTasks.append(self._rewardSoundOutput)
                 
             # lick input
             self._lickInput = nidaqmx.Task()
@@ -635,12 +641,9 @@ class TaskControl():
 
     def initSound(self):
         if self.soundMode == 'sound card':
-            if self.soundLibrary == 'psychtoolbox':
-                self._audioStream = psychtoolbox.audio.Stream(latency_class=[3],
-                                                              freq=self.soundSampleRate,
-                                                              channels=1)
-            elif self.soundLibrary == 'sounddevice':
-                sounddevice.default.latency = 0.016
+            self._audioStream = psychtoolbox.audio.Stream(latency_class=[3],
+                                                          freq=self.soundSampleRate,
+                                                          channels=1)
         elif self.soundMode == 'daq':
             self._soundOutput = nidaqmx.Task()
             self._soundOutput.ao_channels.add_ao_voltage_chan(self.soundNidaqDevice+'/ao'+str(self.soundChannel),min_val=-10,max_val=10)
@@ -649,26 +652,25 @@ class TaskControl():
             self._nidaqTasks.append(self._soundOutput)
                 
     
-    def playSound(self,soundArray):
+    def loadSound(self,soundArray):
         if self.soundMode == 'sound card':
-            if self.soundLibrary == 'psychtoolbox':
-                self._audioStream.fill_buffer(soundArray)
-                self._audioStream.start()
-            elif self.soundLibrary == 'sounddevice':
-                sounddevice.play(soundArray,self.soundSampleRate)
+            self._audioStream.fill_buffer(soundArray)
         elif self.soundMode == 'daq':
             self._soundOutput.stop()
             self._soundOutput.timing.samp_quant_samp_per_chan = soundArray.size
-            self._soundOutput.write(soundArray,auto_start=True)
+            self._soundOutput.write(soundArray,auto_start=False)
+
+
+    def startSound(self):
+        if self.soundMode == 'sound card':
+            self._audioStream.start()
+        elif self.soundMode == 'daq':
+            self._soundOutput.start()
 
 
     def stopSound(self):
         if self.soundMode == 'sound card':
-            if self.soundLibrary == 'psychtoolbox':
-                if hasattr(self,'_audioStream'):
-                    self._audioStream.stop()
-            elif self.soundLibrary == 'sounddevice':
-                sounddevice.stop()
+            self._audioStream.stop()
         elif self.soundMode == 'daq':
             self._soundOutput.stop()
                 
@@ -714,7 +716,7 @@ class TaskControl():
     def initOpto(self):
         if self.optoNidaqDevice is not None:
             self._optoOutput = nidaqmx.Task()
-            channels = [ch for dev in self.optoChannels for ch in self.optoChannels[dev] if ch is not None]
+            channels = [ch for dev in self.optoChannels for ch in self.optoChannels[dev] if not np.isnan(ch)]
             if self.galvoChannels is not None:
                 channels += self.galvoChannels
             self._nOptoChannels = max(channels) + 1
@@ -771,16 +773,18 @@ class TaskControl():
                     pwr = pwr * 2
                 self.optoParams['optoVoltage'][-1].append(OptoParams.powerToVolts(self.optoPowerCalibrationData[dev],pwr))
             self.optoParams['optoVoltage'][-1] = np.array(self.optoParams['optoVoltage'][-1])
-    
+            
 
     def optoOn(self,devices,amps,ramp=0,x=None,y=None):
         waveforms = [self.getOptoPulseWaveform(amp,onRamp=ramp,lastVal=amp) for amp in amps]
-        self.applyOptoWaveform(devices,waveforms,x,y)
+        self.loadOptoWaveform(devices,waveforms,x,y)
+        self.startOpto()
     
     
     def optoOff(self,devices,ramp=0): 
         waveforms = [self.getOptoPulseWaveform(self._optoOutputVoltage[self.optoChannels[dev][0]],offRamp=ramp) for dev in devices]
-        self.applyOptoWaveform(devices,waveforms)
+        self.loadOptoWaveform(devices,waveforms)
+        self.startOpto()
     
     
     def getOptoPulseWaveform(self,amp,dur=0,delay=0,freq=0,onRamp=0,offRamp=0,offset=0,lastVal=0):
@@ -806,9 +810,18 @@ class TaskControl():
         if delay > 0:
             waveform = np.concatenate((np.zeros(int(delay*sampleRate)),waveform))
         return waveform
+    
+    
+    def getGalvoWaveforms(self,galvoVoltage,dwellTime,nSamples):
+        # each row of galvoVoltage array is an (x,y) position
+        # dwell time is time spent at each position before repeating the cycle
+        dwellSamples = int(dwellTime * self._optoOutput.timing.samp_clk_rate)
+        nRepeats = int(np.ceil(nSamples / dwellSamples))
+        x,y = np.tile(np.repeat(galvoVoltage.T,dwellSamples,axis=1),nRepeats)[:,:nSamples]
+        return x,y
 
 
-    def applyOptoWaveform(self,optoDevices,optoWaveforms,galvoX=None,galvoY=None):
+    def loadOptoWaveform(self,optoDevices,optoWaveforms,galvoX=None,galvoY=None):
         self._optoOutput.stop()
         nSamples = max(w.size for w in optoWaveforms)
         self._optoOutput.timing.samp_quant_samp_per_chan = nSamples
@@ -821,8 +834,12 @@ class TaskControl():
             output[channels[0],:waveform.size] = waveform
             if not np.isnan(channels[1]):
                 output[channels[1],output[channels[0]]>0] = 5
-        self._optoOutput.write(output,auto_start=True)
+        self._optoOutput.write(output,auto_start=False)
         self._optoOutputVoltage = output[:,-1]
+
+
+    def startOpto(self):
+        self._optoOutput.start()
 
 
     def initAccumulatorInterface(self,params):
@@ -1043,8 +1060,9 @@ def measureSound(params,soundVol,soundDur,soundInterval,nidaqDevName):
     
     for vol in soundVol:
         soundArray = task.makeSoundArray(soundType='noise',dur=soundDur,vol=vol,freq=[2000,20000])
+        task.loadSound(soundArray)
         digitalOut.write(True)
-        task.playSound(soundArray)
+        task.startSound()
         time.sleep(soundDur)
         digitalOut.write(False)
         time.sleep(soundInterval)
@@ -1185,7 +1203,8 @@ if __name__ == "__main__":
         task.startNidaqDevice()
         for _ in range(5):
             task.triggerReward(task.solenoidOpenTime)
-            task.triggerRewardSound()
+            if task.rewardSoundLine is not None:
+                task.triggerRewardSound()
             time.sleep(1)
         task.stopNidaqDevice()
     elif params['taskVersion'] == 'lick test':
@@ -1203,11 +1222,12 @@ if __name__ == "__main__":
         soundVol = 0.08 if task.soundCalibrationFit is None else task.dBToVol(soundLevel,*task.soundCalibrationFit)
         soundArray = task.makeSoundArray(soundType='noise',dur=soundDur,vol=soundVol,freq=[2000,20000])
         #soundArray = task.makeSoundArray(soundType='tone',dur=soundDur,vol=soundVol,freq=10000)
-        task.playSound(soundArray)
+        task.loadSound(soundArray)
+        task.startSound()
         time.sleep(soundDur+1)
         task.stopNidaqDevice()
     elif params['taskVersion'] == 'sound measure':
-        nidaqDevName = 'Dev2'
+        nidaqDevName = 'Dev3'
         #soundVol = [0.5]
         soundVol = [0,0.01,0.02,0.04,0.08,0.16,0.32,0.64,1]
         soundDur = 5
@@ -1218,8 +1238,13 @@ if __name__ == "__main__":
         task._nidaqTasks = []
         task.startNidaqDevice()
         task.initOpto()
-        x,y,amp,dur,freq,offset = [float(params[key]) for key in ('galvoX','galvoY','optoAmp','optoDur','optoFreq','optoOffset')]
-        task.applyOptoWaveform([params['optoDev']],[task.getOptoPulseWaveform(amp,dur,freq=freq,offset=offset)],x,y)
+        dwell,amp,dur,freq,offset = [float(params[key]) for key in ('galvoDwellTime','optoAmp','optoDur','optoFreq','optoOffset')]
+        optoWaveforms = [task.getOptoPulseWaveform(amp,dur,freq=freq,offset=offset)]
+        nSamples = max(w.size for w in optoWaveforms)
+        galvoVoltage = np.stack([[float(val) for val in vals.split(',')] for vals in (params['galvoX'],params['galvoY'])]).T
+        galvoX,galvoY = task.getGalvoWaveforms(galvoVoltage,dwell,nSamples)
+        task.loadOptoWaveform([params['optoDev']],optoWaveforms,galvoX,galvoY)
+        task.startOpto()
         time.sleep(dur + 0.5)
         task.stopNidaqDevice()
     elif params['taskVersion'] == 'spontaneous':
