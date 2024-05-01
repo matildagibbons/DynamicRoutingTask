@@ -219,16 +219,23 @@ class TaskControl():
                     self.monGamma = None
                     self.gammaErrorPolicy = 'warn'
                     self.monSizePix = (1920,1200)
-                    self.rotaryEncoder = None
+                    self.rotaryEncoder = 'digital'
+                    self.rotaryEncoderSerialPort = 'COM3'
                     self.behavNidaqDevice = 'Dev1'
                     self.rewardLine = (0,1)
                     self.lickLine = (0,0)
+                    self.soundMode = 'daq'
                     self.soundNidaqDevice = 'Dev1'
-                    self.soundChannel = 0
+                    self.soundChannel = (0)
+                    soundFilterPath = r"C:\Users\teenspirit\Desktop\Behavior\Tilda\Stimuli\Tildas speaker calibration 01252024\01252024_npx_spkrleft_31-80k_fs200k.mat"
+                    import scipy.io
+                    d = scipy.io.loadmat(soundFilterPath)
+                    self.soundSampleRate = d['Fs'][0]
+                    self.soundFilter = d['FILT'][0]
                 else:
-                    raise ValueError(self.rigName + ' is not a recognized rig name')
-                
-            
+                    raise ValueError(self.rigName + ' is not a recognized rig name') 
+
+
     def prepareSession(self,window=True):
         self._win = None
         self._nidaqTasks = []
@@ -652,14 +659,23 @@ class TaskControl():
             self._soundOutput.timing.cfg_samp_clk_timing(self.soundSampleRate)
             self._nidaqTasks.append(self._soundOutput)
                 
-    
     def loadSound(self,soundArray):
+        if self.soundFilter is not None:
+            soundArray = np.convolve(soundArray, self.soundFilter, 'same')
+        
         if self.soundMode == 'sound card':
             self._audioStream.fill_buffer(soundArray)
         elif self.soundMode == 'daq':
+            if np.isnan(self.soundChannel[1]):
+                output = soundArray * 10
+            else:
+                output = np.zeros((2,soundArray.size))
+                output[0] = soundArray * 10
+                output[1,:-1] = 5
             self._soundOutput.stop()
+            self._soundOutput.control(nidaqmx.constants.TaskMode.TASK_UNRESERVE)
             self._soundOutput.timing.samp_quant_samp_per_chan = soundArray.size
-            self._soundOutput.write(soundArray,auto_start=False)
+            self._soundOutput.write(output,auto_start=False)
 
 
     def startSound(self):

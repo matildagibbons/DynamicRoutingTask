@@ -91,7 +91,7 @@ class DynamicRouting1(TaskControl):
         self.saveSoundArray = params['saveSoundArray'] if params is not None and 'saveSoundArray' in params else False
         self.soundType = 'tone' # 'tone', 'linear sweep', 'log sweep', 'noise', 'AM noise', or dict
         self.soundDur = [0.5] # seconds
-        self.soundVolume = [0.08] # 0-1; used if soundCalibrationFit is None
+        self.soundVolume = [0.02] # 0-1; used if soundCalibrationFit is None
         self.soundLevel = [68] # dB; used if soundCalibrationFit is not None
         self.toneFreq = {'sound1':6000,'sound2':10000} # Hz
         self.linearSweepFreq = {'sound1':[6000,10000],'sound2':[10000,6000]}
