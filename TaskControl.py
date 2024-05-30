@@ -3,19 +3,18 @@
 Superclass for behavioral task control
 
 """
-#HELLO
+#test
 
-from __future__ import division
 import datetime, glob, json, math, os, sys, time
 from threading import Timer
 import h5py
 import numpy as np
-import scipy.signal
 from psychopy import monitors, visual, event
 from psychopy.visual.windowwarp import Warper
 import psychtoolbox.audio
 import nidaqmx
 import serial
+import TaskUtils
 
 
 class TaskControl():
@@ -35,7 +34,10 @@ class TaskControl():
         self.soundMode = 'sound card' # 'sound card' or 'daq'
         self.soundSampleRate = 48000 # Hz
         self.soundHanningDur = 0.005 # seconds
-        
+        self.soundFilter = None
+        self.optoSampleRate = 2000 # Hz
+
+
         # rig specific settings
         self.frameRate = 60
         self.screen = 0 # monitor to present stimuli on
@@ -65,12 +67,15 @@ class TaskControl():
         self.syncNidaqDevice = None
         self.frameSignalLine = None
         self.acquisitionSignalLine = None
+        self.rewardSyncLine = None
+        self.soundMode = 'sound card' # 'sound card', or 'daq'
         self.soundNidaqDevice = None
         self.soundChannel = None
         self.optoNidaqDevice = None
         self.galvoChannels = None
         self.optoChannels = None
-        
+
+ 
         if params is not None:
             self.rigName = params['rigName']
             self.githubTaskScript = params['GHTaskScriptParams']['taskScript'] if 'GHTaskScriptParams' in params else None
@@ -92,6 +97,8 @@ class TaskControl():
                 self.solenoidOpenTime = self.waterCalibrationSlope * self.rewardVol + self.waterCalibrationIntercept
                 self.soundCalibrationFit = params['soundCalibrationFit']
                 self.initAccumulatorInterface(params)
+
+
             else:
                 self.saveDir = r"\\allen\programs\mindscope\workgroups\dynamicrouting\DynamicRoutingTask\Data"
                 self.computerName = None
@@ -218,24 +225,22 @@ class TaskControl():
                     self.monDistance = 15.3
                     self.monGamma = None
                     self.gammaErrorPolicy = 'warn'
+                    self.drawDiodeBox = True
+                    self.diodeBoxSize = 120
+                    self.diodeBoxPosition = (900,540)
                     self.monSizePix = (1920,1200)
-                    self.rotaryEncoder = 'digital'
-                    self.rotaryEncoderSerialPort = 'COM3'
+                    self.rotaryEncoder = 'None'
                     self.behavNidaqDevice = 'Dev1'
-                    self.rewardLine = (0,1)
+                    self.rewardLine = (0,1)                                                                                                                                                            
                     self.lickLine = (0,0)
                     self.soundMode = 'daq'
                     self.soundNidaqDevice = 'Dev1'
-                    self.soundChannel = (0)
-                    soundFilterPath = r"C:\Users\teenspirit\Desktop\Behavior\Tilda\Stimuli\Tildas speaker calibration 01252024\01252024_npx_spkrleft_31-80k_fs200k.mat"
-                    import scipy.io
-                    d = scipy.io.loadmat(soundFilterPath)
-                    self.soundSampleRate = d['Fs'][0]
-                    self.soundFilter = d['FILT'][0]
+                    self.soundChannel = 0
+
                 else:
-                    raise ValueError(self.rigName + ' is not a recognized rig name') 
-
-
+                    raise ValueError(self.rigName + ' is not a recognized rig name')
+                
+            
     def prepareSession(self,window=True):
         self._win = None
         self._nidaqTasks = []
@@ -266,8 +271,11 @@ class TaskControl():
         self.deltaWheelPos = []
         self.microphoneData = []
         self.lickFrames = []
+        self.lickDetectorFrames = [] # frames where lick line is high
         
         self._continueSession = True
+        self._lick = False # True if lick line high current frame but not previous frame
+        self._lickPrevious = False
         self._sessionFrame = 0 # index of frame since start of session
         self._trialFrame = 0 # index of frame since start of trial
         self._reward = False # reward delivered at next frame flip if True
@@ -279,8 +287,8 @@ class TaskControl():
         self._opto = False # False or galvo/opto voltage waveform applied next frame flip
 
         self.startAccumulatorInterface()
-        
-    
+
+
     def prepareWindow(self):
         self._mon = monitors.Monitor('monitor1',
                                      width=self.monWidth,
@@ -307,8 +315,7 @@ class TaskControl():
                                          lineColor=0,
                                          fillColor=1, 
                                          pos=self.diodeBoxPosition)
-        
-        
+   
     def start(self,subjectName=None):
         try:
             if subjectName is not None:
@@ -422,12 +429,17 @@ class TaskControl():
                         fileOut.create_dataset('frameIntervals',data=self._win.frameIntervals)
             self.startTime = None
         
-    
+
+
+      
+
     def startNidaqDevice(self):
         for devName in self.networkNidaqDevices:
             nidaqmx.system.device.Device(devName).reserve_network_device(override_reservation=True)
 
         if self.behavNidaqDevice is not None:
+            self.behavNidaqDeviceSerialNum = nidaqmx.system.device.Device(self.behavNidaqDevice).dev_serial_num
+
             # rotary encoder and microphone
             if self.rotaryEncoder == 'analog' or self.microphoneCh is not None:
                 aiSampleRate = 2000 if self._win.monitorFramePeriod < 0.0125 else 1000
@@ -454,6 +466,7 @@ class TaskControl():
                 self._analogInput.start()
                 self._nidaqTasks.append(self._analogInput)
             
+
             # water reward solenoid
             self._rewardOutput = nidaqmx.Task()
             if self.digitalSolenoidTrigger:
@@ -529,10 +542,17 @@ class TaskControl():
         # digital
         if hasattr(self,'_lickInput'):
             if self._lickInput.read():
-                self._lick = True
-                self.lickFrames.append(self._sessionFrame)
+                if self._lickPrevious:
+                    self._lick = False
+                else:
+                    self._lick = True
+                    self._lickPrevious = True
+                    self.lickFrames.append(self._sessionFrame)
+                self.lickDetectorFrames.append(self._sessionFrame)
             else:
                 self._lick = False
+                self._lickPrevious = False
+
 
 
     def calculateWheelChange(self):
@@ -586,6 +606,7 @@ class TaskControl():
         except:
             self.rotaryEncoderIndex.append(np.nan)
             self.rotaryEncoderCount.append(np.nan)
+
 
 
     def initSolenoid(self):
@@ -659,24 +680,16 @@ class TaskControl():
             self._soundOutput.timing.cfg_samp_clk_timing(self.soundSampleRate)
             self._nidaqTasks.append(self._soundOutput)
                 
+
     def loadSound(self,soundArray):
-        if self.soundFilter is not None:
-            soundArray = np.convolve(soundArray, self.soundFilter, 'same')
-        
         if self.soundMode == 'sound card':
             self._audioStream.fill_buffer(soundArray)
         elif self.soundMode == 'daq':
-            if np.isnan(self.soundChannel[1]):
-                output = soundArray * 10
-            else:
-                output = np.zeros((2,soundArray.size))
-                output[0] = soundArray * 10
-                output[1,:-1] = 5
+            if self.soundFilter is not None:
+                soundArray = np.convolve(soundArray, self.soundFilter, 'same')
             self._soundOutput.stop()
-            self._soundOutput.control(nidaqmx.constants.TaskMode.TASK_UNRESERVE)
             self._soundOutput.timing.samp_quant_samp_per_chan = soundArray.size
-            self._soundOutput.write(output,auto_start=False)
-
+            self._soundOutput.write(soundArray,auto_start=False)
 
     def startSound(self):
         if self.soundMode == 'sound card':
@@ -684,51 +697,12 @@ class TaskControl():
         elif self.soundMode == 'daq':
             self._soundOutput.start()
 
-
     def stopSound(self):
         if self.soundMode == 'sound card':
             self._audioStream.stop()
         elif self.soundMode == 'daq':
             self._soundOutput.stop()
-                
-                
-    def makeSoundArray(self,soundType,dur,vol,freq,AM=None,seed=None):
-        t = np.arange(0,dur,1/self.soundSampleRate)
-        if soundType == 'tone':
-            soundArray = np.sin(2 * np.pi * freq * t)
-        elif soundType in ('linear sweep','log sweep'):
-            f = np.linspace(freq[0],freq[1],t.size)
-            if soundType == 'log sweep':
-                f = (2 ** f) * 1000
-            soundArray = np.sin(2 * np.pi * f * t)
-        elif soundType in ('noise','AM noise'):
-            rng = np.random.RandomState(seed)
-            soundArray = 2 * rng.random(t.size) - 1
-            b,a = scipy.signal.butter(10,freq,btype='bandpass',fs=self.soundSampleRate)
-            soundArray = scipy.signal.filtfilt(b,a,soundArray)
-            soundArray = np.ascontiguousarray(soundArray)
-        if AM is not None and ~np.isnan(AM) and AM > 0:
-            soundArray *= (np.sin(1.5*np.pi + 2*np.pi*AM*t) + 1) / 2
-        elif self.soundHanningDur > 0:
-            # reduce onset/offset click
-            hanningSamples = int(self.soundSampleRate * self.soundHanningDur)
-            hanningWindow = np.hanning(2 * hanningSamples + 1)
-            soundArray[:hanningSamples] *= hanningWindow[:hanningSamples]
-            soundArray[-hanningSamples:] *= hanningWindow[hanningSamples+1:]
-        soundArray /= np.absolute(soundArray).max()
-        soundArray *= vol
-        if self.soundMode == 'daq':
-            soundArray *= 10
-        return soundArray
-    
-    
-    def dBToVol(self,dB,a,b,c):
-        return np.log(1 - ((dB - c) / a)) / b
-    
 
-    def volTodB(self,vol,a,b,c):
-        return a * (1 - np.exp(vol * b)) + c
-    
     
     def initOpto(self):
         if self.optoNidaqDevice is not None:
@@ -1023,6 +997,11 @@ class LickTest(TaskControl):
 
 
 def measureSound(params,soundVol,soundDur,soundInterval,nidaqDevName):
+
+    from nidaqmx.stream_readers import AnalogMultiChannelReader
+    import scipy.optimize
+    os.environ['QT_API'] = 'pyside2'
+    import matplotlib.pyplot as plt
     
     soundVol = np.array(soundVol)
 
@@ -1076,7 +1055,14 @@ def measureSound(params,soundVol,soundDur,soundInterval,nidaqDevName):
     time.sleep(1)
     
     for vol in soundVol:
-        soundArray = task.makeSoundArray(soundType='noise',dur=soundDur,vol=vol,freq=[2000,20000])
+        soundArray = TaskUtils.makeSoundArray(soundType='noise',
+                                              sampleRate=task.soundSampleRate,
+                                              dur=soundDur,
+                                              hanningDur=task.soundHanningDur,
+                                              vol=vol,
+                                              freq=[2000,20000])
+
+
         task.loadSound(soundArray)
         digitalOut.write(True)
         task.startSound()
@@ -1087,6 +1073,7 @@ def measureSound(params,soundVol,soundDur,soundInterval,nidaqDevName):
     task.stopNidaqDevice()
     digitalOut.close()
     analogIn.close()
+
     
     os.environ['QT_API'] = 'pyside2'
     import matplotlib.pyplot as plt
@@ -1123,6 +1110,7 @@ def measureSound(params,soundVol,soundDur,soundInterval,nidaqDevName):
             f.write('\nFit params: dB = a * (1 - exp(volume * b) + c\n')
             for param in fitParams:
                 f.write(str(param) + '\n')
+
 
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
@@ -1214,6 +1202,11 @@ if __name__ == "__main__":
         task = LuminanceTest(params)
         task.saveParams = False
         task.start()
+    elif params['taskVersion'] == 'pupil test':
+        levels = np.random.permutation(np.tile(np.arange(-1,-0.9,0.01),5))
+        framesPerLevel = 60 * 30
+        task = LuminanceTest(params,levels,framesPerLevel)
+        task.start(params['subjectName'])
     elif params['taskVersion'] == 'reward test':
         task = TaskControl(params)
         task._nidaqTasks = []
@@ -1236,15 +1229,25 @@ if __name__ == "__main__":
         task.initSound()
         soundDur = 4
         soundLevel = 68 # dB
-        soundVol = 0.08 if task.soundCalibrationFit is None else task.dBToVol(soundLevel,*task.soundCalibrationFit)
-        soundArray = task.makeSoundArray(soundType='noise',dur=soundDur,vol=soundVol,freq=[2000,20000])
-        #soundArray = task.makeSoundArray(soundType='tone',dur=soundDur,vol=soundVol,freq=10000)
+        soundVol = 0.08 if task.soundCalibrationFit is None else TaskUtils.dBToVol(soundLevel,*task.soundCalibrationFit)
+        soundArray = TaskUtils.makeSoundArray(soundType='noise',
+                                              sampleRate=task.soundSampleRate,
+                                              dur=soundDur,
+                                              hanningDur=task.soundHanningDur,
+                                              vol=soundVol,
+                                              freq=[2000,20000])
+        # soundArray = TaskUtils.makeSoundArray(soundType='tone',
+        #                                       sampleRate=task.soundSampleRate,
+        #                                       dur=soundDur,
+        #                                       hanningDur=task.soundHanningDur,
+        #                                       vol=soundVol,
+        #                                       freq=10000)
         task.loadSound(soundArray)
         task.startSound()
         time.sleep(soundDur+1)
         task.stopNidaqDevice()
     elif params['taskVersion'] == 'sound measure':
-        nidaqDevName = 'Dev3'
+        nidaqDevName = 'Dev2'
         #soundVol = [0.5]
         soundVol = [0,0.01,0.02,0.04,0.08,0.16,0.32,0.64,1]
         soundDur = 5
@@ -1255,30 +1258,34 @@ if __name__ == "__main__":
         task._nidaqTasks = []
         task.startNidaqDevice()
         task.initOpto()
-        dwell,amp,dur,freq,offset = [float(params[key]) for key in ('galvoDwellTime','optoAmp','optoDur','optoFreq','optoOffset')]
-        optoWaveforms = [task.getOptoPulseWaveform(amp,dur,freq=freq,offset=offset)]
+        amp,dur,freq,offset = [float(params[key]) for key in ('optoAmp','optoDur','optoFreq','optoOffset')]
+        optoWaveforms = [TaskUtils.getOptoPulseWaveform(task.optoSampleRate,amp,dur,freq=freq,offset=offset)]
         nSamples = max(w.size for w in optoWaveforms)
-        galvoVoltage = np.stack([[float(val) for val in vals.split(',')] for vals in (params['galvoX'],params['galvoY'])]).T
-        galvoX,galvoY = task.getGalvoWaveforms(galvoVoltage,dwell,nSamples)
+        if params['galvoX'] is None:
+            galvoX = galvoY = None
+        else:
+            x,y = [[float(val) for val in vals.split(',')] for vals in (params['galvoX'],params['galvoY'])]
+            dwell = float(params['galvoDwellTime'])
+            galvoX,galvoY = TaskUtils.getGalvoWaveforms(task.optoSampleRate,x,y,dwell,nSamples)
         task.loadOptoWaveform([params['optoDev']],optoWaveforms,galvoX,galvoY)
         task.startOpto()
         time.sleep(dur + 0.5)
         task.stopNidaqDevice()
     elif params['taskVersion'] == 'spontaneous':
         task = Spontaneous(params)
-        task.monBackgroundColor = -1
-        task.maxFrames = 10 * 3600
+        task.monBackgroundColor = float(params['monBackgroundColor']) if 'monBackgroundColor' in params and params['monBackgroundColor'] is not None else -0.95
+        task.maxFrames = int(params['maxFrames']) if 'maxFrames' in params and params['maxFrames'] is not None else 10 * 3600
         task.start(params['subjectName'])
     elif params['taskVersion'] == 'spontaneous rewards':
         task = SpontaneousRewards(params,numRewards=6,rewardInterval=90*60)
-        task.monBackgroundColor = -1
+        task.monBackgroundColor = float(params['monBackgroundColor']) if 'monBackgroundColor' in params and params['monBackgroundColor'] is not None else -0.95
         if 'rewardSound' in params:
             task.rewardSound = params['rewardSound']
-        task.maxFrames = 10 * 3600
+        task.maxFrames = int(params['maxFrames']) if 'maxFrames' in params and params['maxFrames'] is not None else 10 * 3600
         task.start(params['subjectName'])
     else:
         task = TaskControl(params)
         task.saveParams = False
         task.spacebarRewardsEnabled = True
-        task.maxFrames = 60 * 3600
+        task.maxFrames = int(params['maxFrames']) if 'maxFrames' in params and params['maxFrames'] is not None else 60 * 3600
         task.start()
