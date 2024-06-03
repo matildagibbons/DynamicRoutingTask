@@ -11,6 +11,7 @@ import random
 import numpy as np
 from psychopy import visual
 from TaskControl import TaskControl
+import TaskUtils
 
 
 class DynamicRouting1(TaskControl):
@@ -58,7 +59,7 @@ class DynamicRouting1(TaskControl):
         self.rewardProbGo = 1 # probability of reward after response on go trial
         self.rewardProbCatch = 0 # probability of autoreward at end of response window on catch trial
         
-        self.rewardSound = None if self.configPath is None else 'device' # None, 'device' (external clicker), 'tone', or 'noise' for sound played with reward delivery
+        self.rewardSound = None if self.rewardSoundLine is None else 'device' # None, 'device' (external clicker), 'tone', or 'noise' for sound played with reward delivery
         self.rewardSoundDur = 0.1 # seconds
         self.rewardSoundVolume = 0.1 # 0-1
         self.rewardSoundLevel = 68 # dB
@@ -116,9 +117,14 @@ class DynamicRouting1(TaskControl):
         self.galvoVoltage = [] # [(x,y)]
         self.galvoDwellTime = 0.005 # seconds
         
-        if params is not None and 'taskVersion' in params:
-            self.taskVersion = params['taskVersion']
-            self.setDefaultParams(params['taskVersion'])
+        if params is not None:
+            if 'taskVersion' in params and params['taskVersion'] is not None:
+                self.taskVersion = params['taskVersion']
+                self.setDefaultParams(params['taskVersion'])
+            if 'maxFrames' in params and params['maxFrames'] is not None:
+                self.maxFrames = params['maxFrames']
+            if 'maxTrials' in params and params['maxTrials'] is not None:
+                self.maxTrials = params['maxTrials']
         else:
             self.taskVersion = None
 
@@ -284,6 +290,19 @@ class DynamicRouting1(TaskControl):
                 self.newBlockAutoRewards = 5
                 self.newBlockGoTrials = 0
                 self.newBlockCatchTrials = 5
+                
+        elif taskVersion in ('no reward ori AMN moving','no reward AMN ori moving'):
+            self.blockStim = [['vis1','vis2','sound1','sound2']] * 7
+            self.soundType = 'AM noise' if 'AMN' in taskVersion else 'tone'
+            if 'ori tone' in taskVersion or 'ori AMN' in taskVersion:
+                self.blockStimRewarded = ['vis1','none','sound1','none','vis1','none','sound1']
+            else:
+                self.blockStimRewarded = ['sound1','none','vis1','none','sound1','none','vis1']
+            self.maxFrames = None
+            self.framesPerBlock = np.array([10] * 7) * 3600
+            self.blockCatchProb = [0.1] * 7
+            if 'moving' in taskVersion:
+                self.gratingTF = 2
 
         elif taskVersion in ('stage variable ori tone','stage variable tone ori',
                              'stage variable ori tone moving','stage variable tone ori moving',
@@ -339,8 +358,8 @@ class DynamicRouting1(TaskControl):
             self.blockCatchProb = [0.1] * 6
             if 'moving' in taskVersion:
                 self.gratingTF = 2
-            self.visStimContrast = [0.01,0.02,0.04,0.06,0.08,0.1]
-            self.soundVolume = [0.01,0.012,0.014,0.016,0.018,0.02]
+            self.visStimContrast = [0.01,0.02,0.04,0.08,0.16] + 15 * [1.0]
+            self.soundVolume = [0.01,0.015,0.02,0.025,0.03] + 15 * [TaskUtils.dBToVol(68,*self.soundCalibrationFit)]
 
         elif taskVersion in ('opto stim ori tone','opto stim tone ori','opto stim ori tone moving','opto stim tone ori moving',
                              'opto stim ori AMN','opto stim AMN ori','opto stim ori AMN moving','opto stim AMN ori moving',
@@ -481,7 +500,8 @@ class DynamicRouting1(TaskControl):
         if self.rewardSound == 'device':
             self._rewardSound = True
         elif self.rewardSound is not None:
-            self._sound = [self.rewardSoundArray]
+            self.loadSound(self.rewardSoundArray)
+            self._sound = True
         
 
     def taskFlow(self):
@@ -502,21 +522,25 @@ class DynamicRouting1(TaskControl):
         # convert dB to volume
         if self.soundCalibrationFit is not None:
             if self.customSampling != 'contrast volume':
-                self.soundVolume = [self.dBToVol(dB,*self.soundCalibrationFit) for dB in self.soundLevel]
-            self.rewardSoundVolume = self.dBToVol(self.rewardSoundLevel,*self.soundCalibrationFit)
-            self.incorrectSoundVolume = self.dBToVol(self.incorrectSoundLevel,*self.soundCalibrationFit)
+                self.soundVolume = [TaskUtils.dBToVol(dB,*self.soundCalibrationFit) for dB in self.soundLevel]
+            self.rewardSoundVolume = TaskUtils.dBToVol(self.rewardSoundLevel,*self.soundCalibrationFit)
+            self.incorrectSoundVolume = TaskUtils.dBToVol(self.incorrectSoundLevel,*self.soundCalibrationFit)
 
         # sound for reward or incorrect response
         if self.rewardSound is not None and self.rewardSound != 'device':
-            self.rewardSoundArray = self.makeSoundArray(soundType=self.rewardSound,
-                                                        dur=self.rewardSoundDur,
-                                                        vol=self.rewardSoundVolume,
-                                                        freq=self.rewardSoundFreq)
+            self.rewardSoundArray = TaskUtils.makeSoundArray(soundType=self.rewardSound,
+                                                             sampleRate=self.soundSampleRate,
+                                                             dur=self.rewardSoundDur,
+                                                             hanningDur=self.soundHanningDur,
+                                                             vol=self.rewardSoundVolume,
+                                                             freq=self.rewardSoundFreq)
         if self.incorrectSound is not None:
-            self.incorrectSoundArray = self.makeSoundArray(soundType=self.incorrectSound,
-                                                           dur=self.incorrectSoundDur,
-                                                           vol=self.incorrectSoundVolume,
-                                                           freq=self.incorrectSoundFreq)
+            self.incorrectSoundArray = TaskUtils.makeSoundArray(soundType=self.incorrectSound,
+                                                                sampleRate=self.soundSampleRate,
+                                                                dur=self.incorrectSoundDur,
+                                                                hanningDur=self.soundHanningDur,
+                                                                vol=self.incorrectSoundVolume,
+                                                                freq=self.incorrectSoundFreq)
         
         # opto params
         if self.importOptoParams:
@@ -616,7 +640,8 @@ class DynamicRouting1(TaskControl):
                     customContrastVolume = False
                     isOptoTrial = False
                     
-                    if blockTrialCount < self.newBlockGoTrials + self.newBlockNogoTrials + self.newBlockCatchTrials:
+                    if (blockTrialCount < self.newBlockGoTrials + self.newBlockNogoTrials + self.newBlockCatchTrials
+                        and self.blockStimRewarded[blockNumber-1] != 'none'):
                         if self.newBlockGoTrials > 0:
                             stim = self.blockStimRewarded[blockNumber-1]
                         elif self.newBlockNogoTrials > 0:
@@ -726,7 +751,15 @@ class DynamicRouting1(TaskControl):
                         elif soundType == 'AM noise':
                             soundFreq = (2000,20000)
                             soundAM = self.ampModFreq[soundName]
-                        soundArray = self.makeSoundArray(soundType,soundDur,soundVolume,soundFreq,soundAM,soundSeed)
+                        soundArray = TaskUtils.makeSoundArray(soundType,
+                                                              self.soundSampleRate,
+                                                              soundDur,
+                                                              self.soundHanningDur,
+                                                              soundVolume,
+                                                              soundFreq,
+                                                              soundAM,
+                                                              soundSeed)
+                        self.loadSound(soundArray)
 
                 if self.optoParams is None and blockTrialCount >= self.newBlockGoTrials + self.newBlockNogoTrials + self.newBlockCatchTrials and random.random() < self.optoProb:
                     isOptoTrial = True
@@ -759,12 +792,12 @@ class DynamicRouting1(TaskControl):
                         self.trialGalvoVoltage.append(self.optoParams['galvoVoltage'][i])
                         self.trialGalvoDwellTime.append(self.optoParams['dwell time'][i])
                     optoDevs = self.trialOptoDevice[-1]
-                    optoWaveforms = [self.getOptoPulseWaveform(volts,dur,delay,freq,onRamp,offRamp,self.optoOffsetVoltage[dev])
+                    optoWaveforms = [TaskUtils.getOptoPulseWaveform(self.optoSampleRate,volts,dur,delay,freq,onRamp,offRamp,self.optoOffsetVoltage[dev])
                                      for dev,volts,dur,delay,freq,onRamp,offRamp
                                      in zip(self.trialOptoDevice[-1],self.trialOptoVoltage[-1],self.trialOptoDur[-1],self.trialOptoDelay[-1],self.trialOptoSinFreq[-1],self.trialOptoOnRamp[-1],self.trialOptoOffRamp[-1])]
-                    galvoX,galvoY = (None,None) if self.galvoChannels is None else self.trialGalvoVoltage[-1][0]
+                    galvoX,galvoY = (None,None) if self.galvoChannels is None else TaskUtils.getGalvoWaveforms(self.optoSampleRate,self.trialGalvoVoltage[-1],self.trialGalvoDwellTime[-1],max(w.size for w in optoWaveforms))
+                    self.loadOptoWaveform(optoDevs,optoWaveforms,galvoX,galvoY)
                 else:
-                    optoDevs = optoWaveforms = galvoX = galvoY = None
                     if self.optoParams is not None or self.optoProb > 0:
                         self.trialOptoLabel.append('no opto')
                         self.trialOptoParamsIndex.append(np.nan)
@@ -841,15 +874,15 @@ class DynamicRouting1(TaskControl):
                 self.trialPreStimFrames[-1] += randomExponential(self.preStimFramesFixed,self.preStimFramesVariableMean,self.preStimFramesMax)
             
             # trigger opto stimulus
-            if optoWaveforms is not None and self._trialFrame == self.trialPreStimFrames[-1] + self.trialOptoOnsetFrame[-1]:
-                self._opto = [optoDevs,optoWaveforms,galvoX,galvoY]
+            if isOptoTrial and self._trialFrame == self.trialPreStimFrames[-1] + self.trialOptoOnsetFrame[-1]:
+                self._opto = True
                 optoTriggered = True
             
             # show/trigger stimulus
             if self._trialFrame == self.trialPreStimFrames[-1]:
                 self.trialStimStartFrame.append(self._sessionFrame)
                 if soundDur > 0:
-                    self._sound = [soundArray]
+                    self._sound = True
             if (visStimFrames > 0
                 and self.trialPreStimFrames[-1] <= self._trialFrame < self.trialPreStimFrames[-1] + visStimFrames):
                 if self.gratingTF > 0:
@@ -885,8 +918,8 @@ class DynamicRouting1(TaskControl):
                 if self._trialFrame == self.trialPreStimFrames[-1] + self.responseWindow[1]:
                     self._win.color = self.incorrectTimeoutColor
                     if self.incorrectSound is not None:
-                        self.stopSound()
-                        self._sound = [self.incorrectSoundArray]
+                        self.loadSound(self.incorrectSoundArray)
+                        self._sound = True
                 elif self._trialFrame == self.trialPreStimFrames[-1] + self.responseWindow[1] + timeoutFrames:
                     self._win.color = self.monBackgroundColor
             

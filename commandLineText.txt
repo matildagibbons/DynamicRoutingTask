@@ -1,2 +1,3 @@
 conda activate DynamicRoutingTaskDev
-python "C:\Users\teenspirit\Documents\GitHub\DynamicRoutingTask\TaskControl.py" "C:\Users\teenspirit\Documents\GitHub\DynamicRoutingTask\taskParams.json"
+python "C:\Users\teenspirit\Desktop\Behavior\Tilda\Stimuli\Behaviour\DynamicRoutingTask\DynamicRouting1.py" "C:\Users\teenspirit\Desktop\Behavior\Tilda\Stimuli\Behaviour\DynamicRoutingTask\taskParams.json"
+
