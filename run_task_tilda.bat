@@ -1,0 +1,2 @@
+conda activate DynamicRoutingTaskDev
+python "C:\Users\teenspirit\Desktop\Behavior\Tilda\Stimuli\Behaviour\DynamicRoutingTask\DynamicRouting1.py" "C:\Users\teenspirit\Desktop\Behavior\Tilda\Stimuli\Behaviour\DynamicRoutingTask\taskParams.json"
