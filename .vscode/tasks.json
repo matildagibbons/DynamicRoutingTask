@@ -2,9 +2,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Run Task",
+            "label": "Run Task Tilda",
             "type": "shell",
-            "command": "${workspaceFolder}/run_task_tilda.bat",
+            "command": "${workspaceFolder}/matildagibbons/DynamicRoutingTask/run_task_tilda.bat",
             "problemMatcher": [],
             "group": {
                 "kind": "build",
