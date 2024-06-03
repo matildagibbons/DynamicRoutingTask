@@ -3,7 +3,7 @@
     "tasks": [
         {
             "label": "Run Task Tilda",
-            "type": "process",
+            "type": "shellExec",
             "command": "${workspaceFolder}/run_task_tilda.bat",
             "problemMatcher": [],
             "group": {
