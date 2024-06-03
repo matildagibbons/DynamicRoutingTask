@@ -4,7 +4,7 @@
         {
             "label": "Run Task Tilda",
             "type": "shell",
-            "command": "${workspaceFolder}/matildagibbons/DynamicRoutingTask/run_task_tilda.bat",
+            "command": "${workspaceFolder}/run_task_tilda.bat",
             "problemMatcher": [],
             "group": {
                 "kind": "build",
