@@ -260,7 +260,8 @@ class TaskControl():
                     self.drawDiodeBox = True
                     self.diodeBoxSize = 120
                     self.diodeBoxPosition = (900,450)
-                    soundFilterPath = "C:\Users\teenspirit\Desktop\Behavior\Tilda\Stimuli\Tildas speaker calibration 01252024\01252024_npx_spkrleft_31-80k_fs200k.mat"
+                    soundFilterPath = r"C:\Users\teenspirit\Desktop\Behavior\Tilda\Stimuli\Tildas speaker calibration 01252024\01252024_npx_spkrleft_31-80k_fs200k.mat"
+                    import scipy.io
                     d = scipy.io.loadmat(soundFilterPath)
                     self.soundSampleRate = d['Fs'][0]
                     self.soundFilter = d['FILT'][0]
@@ -724,7 +725,8 @@ class TaskControl():
         if self.soundMode == 'sound card':
             self._audioStream.fill_buffer(soundArray)
         elif self.soundMode == 'daq':
-            soundArray = np.convolve(soundArray), self.soundFilter, 'same'
+            if self.soundFilter is not None:
+                soundArray = np.convolve(soundArray, self.soundFilter, 'same')
             if np.isnan(self.soundChannel[1]):
                 output = soundArray * 10
             else:
