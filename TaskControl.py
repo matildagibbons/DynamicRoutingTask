@@ -257,7 +257,7 @@ class TaskControl():
                     self.soundMode = 'daq'
                     self.soundNidaqDevice = 'Dev1'
                     self.soundChannel = (0,np.nan)
-                    soundFilterPath = r"C:\Users\teenspirit\Desktop\Tilda's behavior\01252024_npx_spkrleft_31-80k_fs200k.mat"
+                    soundFilterPath = r"C:\Users\teenspirit\Desktop\Behavior\Tilda\Stimuli\Tildas speaker calibration 01252024\01252024_npx_spkrleft_31-80k_fs200k.mat"
                     import scipy.io
                     d = scipy.io.loadmat(soundFilterPath)
                     self.soundSampleRate = d['Fs'][0]
