@@ -242,7 +242,7 @@ class TaskControl():
                         self.rotaryEncoderSerialPort = 'COM4'
                         self.soundCalibrationFit = (28.655615630746905,-3.5166732104004796,61.36404105849515)
                 elif self.rigName == 'Tilda':
-                    self.saveDir = r"C:\Users\teenspirit\Desktop\Tilda's behavior\Data"
+                    self.saveDir = r"C:\Users\teenspirit\Desktop\Behavior\Tilda\Behavior data\Data"
                     self.screen = 0
                     self.monWidth = 52.0
                     self.monDistance = 15.3
@@ -250,18 +250,21 @@ class TaskControl():
                     self.gammaErrorPolicy = 'warn'
                     self.monSizePix = (1920,1200)
                     self.rotaryEncoder = 'digital'
-                    self.rotaryEncoderSerialPort = 'COM3'
+                    self.rotaryEncoderSerialPort = 'COM9'
                     self.behavNidaqDevice = 'Dev1'
                     self.rewardLine = (0,1)
                     self.lickLine = (0,0)
                     self.soundMode = 'daq'
                     self.soundNidaqDevice = 'Dev1'
-                    self.soundChannel = (0,np.nan)
+                    self.soundChannel = (0,1)
                     soundFilterPath = r"C:\Users\teenspirit\Desktop\Behavior\Tilda\Stimuli\Tildas speaker calibration 01252024\01252024_npx_spkrleft_31-80k_fs200k.mat"
                     import scipy.io
                     d = scipy.io.loadmat(soundFilterPath)
                     self.soundSampleRate = d['Fs'][0]
                     self.soundFilter = d['FILT'][0]
+                    self.drawDiodeBox = True
+                    self.diodeBoxSize = 120
+                    self.diodeBoxPosition = (900,450)
                 else:
                     raise ValueError(self.rigName + ' is not a recognized rig name')
                 
