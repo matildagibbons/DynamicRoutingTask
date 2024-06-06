@@ -7,12 +7,7 @@ def run_script(task_version, mouse_number, save_dir):
     conda_env = "DynamicRoutingTaskDev"  # Hardcoded Conda environment
     script_path = "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\DynamicRouting1.py"  # Hardcoded script path
     params_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\{task_version.lower()}"  # Construct parameters file path
-    save_dir = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\{mouse_number}"  # Construct save directory path with mouse number
-   
-    
-    # Create the directory if it doesn't exist
-    os.makedirs(save_dir, exist_ok=True)
-   
+
     
     # Activate Conda environment
     activate_cmd = f'conda activate {conda_env} && '
