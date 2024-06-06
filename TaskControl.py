@@ -18,7 +18,7 @@ import TaskUtils
 
 class TaskControl():
     
-    def __init__(self,params=None,save_dir):
+    def __init__(self,params=None):
         self.configPath = None
         self.rigName = None
         self.subjectName = None
