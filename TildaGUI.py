@@ -3,20 +3,20 @@ import subprocess
 import os
 
 
-def run_script(task_version, mouse_number, save_dir):
+def run_script(task_version, mouse_number, self.saveDir):
     conda_env = "DynamicRoutingTaskDev"  # Hardcoded Conda environment
     script_path = "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\DynamicRouting1.py"  # Hardcoded script path
     params_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\{task_version.lower()}"  # Construct parameters file path
     # Create the directory if it doesn't exist
     os.makedirs(save_dir, exist_ok=True)
-    save_dir = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\{mouse_number}"  # Construct save directory path with mouse number
+    self.saveDir = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\{mouse_number}"  # Construct save directory path with mouse number
    
     
     # Activate Conda environment
     activate_cmd = f'conda activate {conda_env} && '
     
     # Command to execute the Python script with parameters
-    python_cmd = f'python "{script_path}" "{params_file}" "{save_dir}"'  # Include save_dir as a parameter
+    python_cmd = f'python "{script_path}" "{params_file}" "{self.saveDir}"'  # Include save_dir as a parameter
     
     # Combine activation and script execution commands
     full_cmd = activate_cmd + python_cmd
