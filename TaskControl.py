@@ -18,7 +18,7 @@ import TaskUtils
 
 class TaskControl():
     
-    def __init__(self,params=None):
+    def __init__(self,params=None,save_dir):
         self.configPath = None
         self.rigName = None
         self.subjectName = None
@@ -242,7 +242,7 @@ class TaskControl():
                         self.rotaryEncoderSerialPort = 'COM4'
                         self.soundCalibrationFit = (28.655615630746905,-3.5166732104004796,61.36404105849515)
                 elif self.rigName == 'Tilda':
-                    self.saveDir == r"C:\Users\teenspirit\Desktop\Behavior\Tilda\Behavior data\Data"
+                    self.saveDir == save_dir
                     self.screen = 0
                     self.monWidth = 52.0
                     self.monDistance = 15.3
