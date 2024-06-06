@@ -2,12 +2,14 @@ import tkinter as tk
 import subprocess
 import os
 
-
-def run_script(task_version, mouse_number, save_dir):
+def run_script(task_version, mouse_number):
     conda_env = "DynamicRoutingTaskDev"  # Hardcoded Conda environment
     script_path = "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\DynamicRouting1.py"  # Hardcoded script path
     params_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\{task_version.lower()}"  # Construct parameters file path
-
+    save_dir = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\{mouse_number}"  # Construct save directory path with mouse number
+   
+     # Create the directory if it doesn't exist
+    os.makedirs(save_dir, exist_ok=True)
     
     # Activate Conda environment
     activate_cmd = f'conda activate {conda_env} && '
@@ -44,7 +46,7 @@ def create_task_buttons(root, row, task_type):
         stage = task_version.split('_')[3]  # Corrected index to extract the stage number
         task_type = task_version.split('_')[-1].split('.')[0].capitalize()
         button_text = f"{task_type} - Stage {stage}" 
-        button = tk.Button(root, text=button_text, command=lambda version=task_version: run_script(version, entry_mouse.get(), f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\{entry_mouse.get()}"))
+        button = tk.Button(root, text=button_text, command=lambda version=task_version: run_script(version, entry_mouse.get()))
         button.grid(row=row+i, column=0, columnspan=2)
 
 # Create buttons for selecting task type
@@ -56,3 +58,4 @@ auditory_button.grid(row=0, column=2, columnspan=2)
 
 # Start the GUI event loop
 root.mainloop()
+
