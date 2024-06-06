@@ -1,10 +1,10 @@
 import tkinter as tk
 import subprocess
 
-def run_script():
+def run_script(task_version):
     conda_env = entry_env.get()  # Get Conda environment from input field
     script_path = entry_script.get()  # Get script path from input field
-    params_file = entry_params.get()  # Get parameters file path from input field
+    params_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\taskParams_{task_version.lower().replace(' ', '_')}.json"  # Construct parameters file path
     
     # Activate Conda environment
     activate_cmd = f'conda activate {conda_env} && '
@@ -22,7 +22,7 @@ def run_script():
 root = tk.Tk()
 root.title("Behavioral Task Runner")
 
-# Create input fields for parameters
+# Create input fields for Conda environment and script path
 label_env = tk.Label(root, text="Conda Environment:")
 label_env.grid(row=0, column=0)
 entry_env = tk.Entry(root)
@@ -33,14 +33,19 @@ label_script.grid(row=1, column=0)
 entry_script = tk.Entry(root)
 entry_script.grid(row=1, column=1)
 
-label_params = tk.Label(root, text="Parameters File Path:")
-label_params.grid(row=2, column=0)
-entry_params = tk.Entry(root)
-entry_params.grid(row=2, column=1)
+# Create buttons for selecting task version
+task_versions = [
+    "Templeton Stage 0 Aud",
+    "Templeton Stage 1 Aud",
+    "Templeton Stage 2 Aud",
+    "Templeton Stage 0 Vis",
+    "Templeton Stage 1 Vis",
+    "Templeton Stage 2 Vis"
+]
 
-# Create a button to run the script
-run_button = tk.Button(root, text="Run Script", command=run_script)
-run_button.grid(row=3, columnspan=2)
+for i, task_version in enumerate(task_versions):
+    button = tk.Button(root, text=task_version, command=lambda version=task_version: run_script(version))
+    button.grid(row=i+2, column=0, columnspan=2)
 
 # Start the GUI event loop
 root.mainloop()
