@@ -2,8 +2,8 @@ import tkinter as tk
 import subprocess
 
 def run_script(task_version):
-    conda_env = entry_env.get()  # Get Conda environment from input field
-    script_path = entry_script.get()  # Get script path from input field
+    conda_env = "DynamicRoutingTaskDev"  # Hardcoded Conda environment
+    script_path = "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\DynamicRouting1.py"  # Hardcoded script path
     params_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\taskParams_{task_version.lower().replace(' ', '_')}.json"  # Construct parameters file path
     
     # Activate Conda environment
@@ -22,7 +22,6 @@ def run_script(task_version):
 root = tk.Tk()
 root.title("Behavioral Task Runner")
 
-
 # Create buttons for selecting task version
 task_versions = [
     "Templeton Stage 0 Aud",
@@ -35,7 +34,7 @@ task_versions = [
 
 for i, task_version in enumerate(task_versions):
     button = tk.Button(root, text=task_version, command=lambda version=task_version: run_script(version))
-    button.grid(row=i+2, column=0, columnspan=2)
+    button.grid(row=i, column=0, columnspan=2)
 
 # Start the GUI event loop
 root.mainloop()
