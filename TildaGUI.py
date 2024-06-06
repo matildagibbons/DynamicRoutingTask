@@ -22,16 +22,6 @@ def run_script(task_version):
 root = tk.Tk()
 root.title("Behavioral Task Runner")
 
-# Create input fields for Conda environment and script path
-label_env = tk.Label(root, text="Conda Environment:")
-label_env.grid(row=0, column=0)
-entry_env = tk.Entry(root)
-entry_env.grid(row=0, column=1)
-
-label_script = tk.Label(root, text="Script Path:")
-label_script.grid(row=1, column=0)
-entry_script = tk.Entry(root)
-entry_script.grid(row=1, column=1)
 
 # Create buttons for selecting task version
 task_versions = [
