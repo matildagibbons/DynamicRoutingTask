@@ -1,9 +1,1 @@
-
-import subprocess
-import os
-import json
-import time
-
-'savePath' = os.path.join(save_dir, mouse_id + '_' + start_time + '.hdf5')
-
- 
+{"subjectName": "test", "rigName": "Tilda", "taskVersion": "templeton stage 1 aud", "saveSoundArray": false, "optoParamsPath": null}

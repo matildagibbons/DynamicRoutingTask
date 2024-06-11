@@ -29,9 +29,9 @@ def run_script(task_version, mouse_number):
    
     with open(GUIparams_file, 'r') as f:
         params = json.load(f)
-        mouse_id = entry_mouse
+        mouse_id = {mouse_number}
         start_time = time.strftime('%Y%m%d_%H%M%S', time.localtime())
-        params['savePath'] = os.path.join(save_dir, mouse_id + '_' + start_time + '.hdf5') 
+        params['savePath'] = os.path.join(save_dir + mouse_id + '_' + start_time + '.hdf5') 
     with open(GUIparams_file, 'w') as f:
         json.dump(params, f)
 
