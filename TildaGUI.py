@@ -28,13 +28,14 @@ def run_script(task_version, mouse_number):
     
     with open(params_file, 'r') as f:
         params = json.load(f)
+    mouse_id = mouse_number
     start_time = time.strftime('%Y%m%d_%H%M%S', time.localtime()) # add this to file name so you don't accidentally overwrite something
-    params['savePath'] = os.path.join(save_dir, mouse_number + '_' + start_time + '.hdf5')
+    params['subjectName'] = mouse_id
+    params['taskVersion'] = task_version
+    params['savePath'] = os.path.join(save_dir, mouse_id + '_' + start_time + '.hdf5')
+    
     with open(params_file, 'w') as f:
         json.dump(params, f)
-    
-  
-
 
 def get_task_versions(task_type):
     task_versions = []
