@@ -10,7 +10,6 @@ def run_script(task_version, mouse_number):
     script_path = "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\DynamicRouting1.py"  # Hardcoded script path
     params_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\{task_version.lower()}"  # Construct parameters file path
     save_dir = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\{mouse_number}"
-    GUIparams_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\GUIparamsfile.py"
 
 # Create the directory if it doesn't exist
     os.makedirs(save_dir, exist_ok=True)
@@ -19,21 +18,22 @@ def run_script(task_version, mouse_number):
     activate_cmd = f'conda activate {conda_env} && '
     
     # Command to execute the Python script with parameters
-    python_cmd = f'python "{script_path}" "{params_file}" "{GUIparams_file}" "{save_dir}"'  # Include save_dir as a parameter
+    python_cmd = f'python "{script_path}" "{params_file}" "{save_dir}"'  # Include save_dir as a parameter
     
     # Combine activation and script execution commands
     full_cmd = activate_cmd + python_cmd
     
     # Execute the command in a subprocess
     subprocess.run(full_cmd, shell=True)
-   
-    with open(GUIparams_file, 'r') as f:
+    
+    with open(params_file, 'r') as f:
         params = json.load(f)
-        mouse_id = {mouse_number}
-        start_time = time.strftime('%Y%m%d_%H%M%S', time.localtime())
-        params['savePath'] = os.path.join(save_dir + mouse_id + '_' + start_time + '.hdf5') 
-    with open(GUIparams_file, 'w') as f:
+    start_time = time.strftime('%Y%m%d_%H%M%S', time.localtime()) # add this to file name so you don't accidentally overwrite something
+    params['savePath'] = os.path.join(save_dir, mouse_number + '_' + start_time + '.hdf5')
+    with open(params_file, 'w') as f:
         json.dump(params, f)
+    
+  
 
 
 def get_task_versions(task_type):

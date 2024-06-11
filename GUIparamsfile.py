@@ -1,1 +1,1 @@
-{"subjectName": "test", "rigName": "Tilda", "taskVersion": "templeton stage 1 aud", "saveSoundArray": false, "optoParamsPath": null}
+{"subjectName": "test", "rigName": "Tilda", "taskVersion": "templeton stage 1 aud", "saveSoundArray": false, "optoParamsPath": null, "savePath": "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\nj\\{mouse_number}_20240611_125015.hdf5"}
