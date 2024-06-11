@@ -242,8 +242,8 @@ class TaskControl():
                         self.rotaryEncoderSerialPort = 'COM4'
                         self.soundCalibrationFit = (28.655615630746905,-3.5166732104004796,61.36404105849515)
                 elif self.rigName == 'Tilda':
-                    self.saveDir = None # directory where TaskControl will create an output file
-                    self.savePath = params['savePath'] # full path to output file
+                    self.saveDir = None # directory where TaskControl will create an output file 
+                    self.savePath = params['savePath']
                     self.screen = 0
                     self.monWidth = 52.0
                     self.monDistance = 15.3
