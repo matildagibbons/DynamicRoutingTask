@@ -242,7 +242,6 @@ class TaskControl():
                         self.rotaryEncoderSerialPort = 'COM4'
                         self.soundCalibrationFit = (28.655615630746905,-3.5166732104004796,61.36404105849515)
                 elif self.rigName == 'Tilda':
-                    import TildaGUI
                     self.saveDir = None # directory where TaskControl will create an output file
                     self.savePath = params['savePath'] # full path to output file
                     self.screen = 0
