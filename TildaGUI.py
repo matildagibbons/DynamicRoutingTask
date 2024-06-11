@@ -4,8 +4,9 @@ import os
 import json
 import time
 
-
+        
 def run_script(task_version, mouse_number):
+    
     conda_env = "DynamicRoutingTaskDev"  # Hardcoded Conda environment
     script_path = "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\DynamicRouting1.py"  # Hardcoded script path
     params_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\{task_version.lower()}"  # Construct parameters file path
@@ -14,6 +15,19 @@ def run_script(task_version, mouse_number):
 # Create the directory if it doesn't exist
     os.makedirs(save_dir, exist_ok=True)
     
+    with open(params_file, 'r') as f:
+        params = json.load(f)
+    mouse_id = mouse_number
+    start_time = time.strftime('%Y%m%d_%H%M%S', time.localtime()) # add this to file name so you don't accidentally overwrite something
+    stage = task_version.split('_')[3]  # Corrected index to extract the stage number
+    task_type = task_version.split('_')[-1].split('.')[0].capitalize()
+    params['subjectName'] = mouse_id
+    params['savePath'] = os.path.join(save_dir, mouse_id + '_' + task_type + '_' + stage  + '_' + start_time + '.hdf5')
+    with open(params_file, 'w') as f:
+        json.dump(params, f)
+    
+    params_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\{task_version.lower()}"  # Construct parameters file path
+
     # Activate Conda environment
     activate_cmd = f'conda activate {conda_env} && '
     
@@ -26,16 +40,6 @@ def run_script(task_version, mouse_number):
     # Execute the command in a subprocess
     subprocess.run(full_cmd, shell=True)
     
-    with open(params_file, 'r') as f:
-        params = json.load(f)
-    mouse_id = mouse_number
-    start_time = time.strftime('%Y%m%d_%H%M%S', time.localtime()) # add this to file name so you don't accidentally overwrite something
-    params['subjectName'] = mouse_id
-    params['taskVersion'] = task_version
-    params['savePath'] = os.path.join(save_dir, mouse_id + '_' + start_time + '.hdf5')
-    
-    with open(params_file, 'w') as f:
-        json.dump(params, f)
 
 def get_task_versions(task_type):
     task_versions = []
