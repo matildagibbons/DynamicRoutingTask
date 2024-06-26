@@ -3,8 +3,12 @@ import subprocess
 import os
 import json
 import time
+import win32api
+import win32con
 
-        
+
+
+    
 def run_script(task_version, mouse_number):
     
     conda_env = "DynamicRoutingTaskDev"  # Hardcoded Conda environment
@@ -28,6 +32,7 @@ def run_script(task_version, mouse_number):
     
     params_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\{task_version.lower()}"  # Construct parameters file path
 
+
     # Activate Conda environment
     activate_cmd = f'conda activate {conda_env} && '
     
@@ -48,9 +53,29 @@ def get_task_versions(task_type):
             task_versions.append(file_name)
     return task_versions
 
+def duplicate_displays(display_index):
+    # Get display device name for the specified index
+    device_name = win32api.EnumDisplayDevices(None, display_index)
+
+    # Get current display settings for the specified device
+    devmode = win32api.EnumDisplaySettings(device_name.DeviceName, win32con.ENUM_CURRENT_SETTINGS)
+
+    try:
+        # Set display mode to duplicate
+        result = win32api.ChangeDisplaySettingsEx(device_name.DeviceName, devmode)
+        if result == win32con.DISP_CHANGE_SUCCESSFUL:
+            print(f"Display {display_index} duplicated successfully")
+        else:
+            print(f"Failed to duplicate display {display_index}. Error code: {result}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+
 # Create the main window
 root = tk.Tk()
 root.title("Behavioral Task Runner")
+
 
 # Create entry field for typing in mouse number
 label_mouse = tk.Label(root, text="Mouse Number:")
@@ -74,6 +99,10 @@ visual_button.grid(row=0, column=0, columnspan=2)
 auditory_button = tk.Button(root, text="Auditory", command=lambda: create_task_buttons(root, 1, 'aud'))
 auditory_button.grid(row=0, column=2, columnspan=2)
 
+
+# Create a button to duplicate displays
+duplicate_button = tk.Button(root, text="Duplicate Displays", command=lambda: duplicate_displays(0))
+duplicate_button.grid()
 
 # Start the GUI event loop
 root.mainloop()
