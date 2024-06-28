@@ -250,6 +250,8 @@ class TaskControl():
                     self.monGamma = None
                     self.gammaErrorPolicy = 'warn'
                     self.monSizePix = (1920,1200)
+                    self.rotaryEncoder = 'digital'
+                    self.rotaryEncoderSerialPort = 'None'
                     self.behavNidaqDevice = 'Dev1'
                     self.rewardLine = (0,1)
                     self.lickLine = (0,0)
