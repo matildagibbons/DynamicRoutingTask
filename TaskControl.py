@@ -251,7 +251,7 @@ class TaskControl():
                     self.gammaErrorPolicy = 'warn'
                     self.monSizePix = (1920,1200)
                     self.rotaryEncoder = 'digital'
-                    self.rotaryEncoderSerialPort = 'COM12'
+                    self.rotaryEncoderSerialPort = 'COM4'
                     self.behavNidaqDevice = 'Dev1'
                     self.rewardLine = (0,1)
                     self.lickLine = (0,0)
@@ -292,6 +292,8 @@ class TaskControl():
 
         if self.rotaryEncoder == 'digital':
             self.initDigitalEncoder()
+            
+       
         
         self.rotaryEncoderVolts = [] # rotary encoder analog input each frame
         self.rotaryEncoderIndex = [] # rotary encoder digital input read index
@@ -604,6 +606,8 @@ class TaskControl():
             
     def initDigitalEncoder(self):
         self._digitalEncoder = serial.Serial(port=self.rotaryEncoderSerialPort,baudrate=9600,timeout=0.5)
+
+
 
         # intialize arduino
         for message,response in zip(('7','3','8'),('MDR0','STR','MDR0')):
