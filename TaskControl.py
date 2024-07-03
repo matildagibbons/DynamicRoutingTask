@@ -15,6 +15,12 @@ import nidaqmx
 import serial
 import TaskUtils
 
+import tkinter as tk
+import subprocess
+import os
+import json
+import time
+
 
 class TaskControl():
     
@@ -288,6 +294,7 @@ class TaskControl():
         self.initSound()
 
         self.initOpto()
+          
 
         if self.rotaryEncoder == 'digital':
             self.initDigitalEncoder()
@@ -318,8 +325,19 @@ class TaskControl():
 
         self.startAccumulatorInterface()
         
+    def display_black_screen_and_wait(self):
+    root = tk.Tk()
+    root.attributes('-fullscreen', True)
+    root.configure(background='black')
+
+    def on_key_press(event):
+        root.destroy()
+
+    root.bind('<KeyPress>', on_key_press)
+    root.mainloop()
     
     def prepareWindow(self):
+        self.display_black_screen_and_wait()
         self._mon = monitors.Monitor('monitor1',
                                      width=self.monWidth,
                                      distance=self.monDistance,
@@ -457,6 +475,7 @@ class TaskControl():
                         fileOut.create_dataset('frameIntervals',data=self._win.frameIntervals)
             self.startTime = None
         
+  
     
     def startNidaqDevice(self):
         for devName in self.networkNidaqDevices:

@@ -38,8 +38,25 @@ def run_script(task_version, mouse_number):
         # Combine activation and script execution commands
         full_cmd = activate_cmd + python_cmd
 
-        # Execute the command in a subprocess
-        subprocess.run(full_cmd, shell=True)
+        # Display a black screen before starting the task
+        black_screen = tk.Toplevel()
+        black_screen.attributes('-fullscreen', True)
+        black_screen.configure(background='black')
+        black_screen.title("Black Screen")
+
+        # Function to handle key press event
+        def on_key_press(event):
+            black_screen.destroy()  # Destroy black screen immediately
+            root.update()  # Update GUI to reflect immediate destruction
+
+            # Start the task without waiting
+            subprocess.Popen(full_cmd, shell=True)
+
+        # Bind key press event to the black screen window
+        black_screen.bind('<KeyPress>', on_key_press)
+        black_screen.focus_force()
+
+        black_screen.mainloop()
     else:
         print("Please select a task stage and enter a mouse number first.")
 
