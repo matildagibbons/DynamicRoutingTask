@@ -46,6 +46,7 @@ class TaskControl():
         self.monDistance = 15.3 # cm
         self.monGamma = 2.3 # float or None
         self.gammaErrorPolicy = 'raise'
+        self.display_black_screen_and_wait=None 
         self.monSizePix = (1920,1200)
         self.warp = None # 'spherical', 'cylindrical', 'warpfile', None
         self.warpFile = None
@@ -260,6 +261,7 @@ class TaskControl():
                     self.lickLine = (0,0)
                     self.soundMode = 'daq'
                     self.soundNidaqDevice = 'Dev1'
+                    self.display_black_screen_and_wait = self['blackScreen']
                     self.soundChannel = (0,1)
                     self.drawDiodeBox = True
                     self.diodeBoxSize = 120
@@ -277,6 +279,7 @@ class TaskControl():
     def prepareSession(self,window=True):
         self._win = None
         self._nidaqTasks = []
+        self.blackScreen =  root = tk.Tk() root.attributes('-fullscreen', True) root.configure(background='black')
         
         if self.startTime is None:
             startTime = time.localtime()
@@ -323,18 +326,17 @@ class TaskControl():
 
         self.startAccumulatorInterface()
         
-    def display_black_screen_and_wait():
-    root = tk.Tk()
-    root.attributes('-fullscreen', True)
-    root.configure(background='black')
+ 
+        
 
     def on_key_press(event):
-        root.destroy()
-
+        root.destroy
+        
     root.bind('<KeyPress>', on_key_press)
     root.mainloop()
-
+        
     def prepareWindow(self):
+        self.blackScreen
         self._mon = monitors.Monitor('monitor1',
                                      width=self.monWidth,
                                      distance=self.monDistance,
@@ -1081,6 +1083,8 @@ def measureSound(params,soundVol,soundDur,soundInterval,nidaqDevName):
     analogInReader = AnalogMultiChannelReader(analogIn.in_stream)
     analogInData = np.zeros((analogInChannels,analogInBufferSize))
 
+
+    
     startTime = time.strftime('%Y%m%d_%H%M%S',time.localtime())
     savePath = os.path.join(task.saveDir,'sound','soundMeasure_' + params['rigName'] +'_' + startTime)
     h5File = h5py.File(savePath+'.hdf5','a',libver='latest')
