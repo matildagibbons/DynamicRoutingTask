@@ -7,7 +7,7 @@ import time
         
 def run_script(task_version, mouse_number):
     
-    conda_env = "DynamicRoutingTaskDev"  # Hardcoded Conda environment
+    conda_env = "c:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\.conda" # Hardcoded Conda environment
     script_path = "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\DynamicRouting1.py"  # Hardcoded script path
     params_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\{task_version.lower()}"  # Construct parameters file path
     save_dir = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\{mouse_number}"
@@ -29,7 +29,7 @@ def run_script(task_version, mouse_number):
     params_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\{task_version.lower()}"  # Construct parameters file path
 
     # Activate Conda environment
-    activate_cmd = f'conda activate {conda_env} && '
+    activate_cmd = f'conda activate {conda_env} &&'
     
     # Command to execute the Python script with parameters
     python_cmd = f'python "{script_path}" "{params_file}" "{save_dir}"'  # Include save_dir as a parameter
