@@ -53,9 +53,6 @@ class TaskControl():
         self.wheelRadius = 4.69 # cm
         self.wheelPolarity = -1
         self.rotaryEncoder = 'None' # 'digital', 'analog', or None
-        self.rotaryEncoderCh = 1 # nidaq analog input channel
-        self.rotaryEncoderSerialPort = None # serial input from arduino for digital encoder
-        self.rotaryEncoderCountsPerRev = 8192 # digital pulses per revolution of encoder
         self.networkNidaqDevices = []
         self.behavNidaqDevice = None
         self.rewardLine = None
