@@ -52,7 +52,10 @@ class TaskControl():
         self.drawDiodeBox = False
         self.wheelRadius = 4.69 # cm
         self.wheelPolarity = -1
-        self.rotaryEncoder = 'None' # 'digital', 'analog', or None
+        self.rotaryEncoder = 'digital' # 'digital', 'analog', or None
+        self.rotaryEncoderCh = 1 # nidaq analog input channel
+        self.rotaryEncoderSerialPort = None # serial input from arduino for digital encoder
+        self.rotaryEncoderCountsPerRev = 8192 # digital pulses per revolution of encoder
         self.networkNidaqDevices = []
         self.behavNidaqDevice = None
         self.rewardLine = None
@@ -251,12 +254,11 @@ class TaskControl():
                     self.monGamma = None
                     self.gammaErrorPolicy = 'warn'
                     self.monSizePix = (1920,1200)
-                    self.rotaryEncoder = 'None'
+                    self.rotaryEncoder = 'digital'
+                    self.rotaryEncoderSerialPort = 'None'
                     self.behavNidaqDevice = 'Dev1'
                     self.rewardLine = (0,1)
                     self.lickLine = (0,0)
-                    self.rotaryEncoder = 'digital'
-                    self.rotaryEncoderSerialPort = 'COM6'
                     self.soundMode = 'daq'
                     self.soundNidaqDevice = 'Dev1'
                     self.soundChannel = (0,1)
