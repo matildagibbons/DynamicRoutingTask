@@ -3,30 +3,7 @@ import subprocess
 import os
 import json
 import time
-from PyDAQmx import Task
 
-def administer_water():
-    """Function to administer water to the mouse via NI-DAQ."""
-    # Create a task to send a signal to the NI-DAQ
-    task = Task()
-    
-    # Create a digital output channel (this assumes your NI-DAQ card is properly configured)
-    # Replace 'Dev1/port0/line0' with the correct device and line name for your NI-DAQ card
-    task.create_digital_chan('Dev1/port0/line1', "WaterValve", Task.OUTPUT)
-
-    # Write a high signal (1) to output the water (turn on water valve)
-    task.write_digitals(1)  # This will send a signal to output 0 (change if needed)
-    print("Water administered.")
-    
-    time.sleep(1)  # Keep the valve open for 1 second
-    
-    # Write a low signal (0) to stop the water (turn off water valve)
-    task.write_digitals(0)  # Turn off the water valve
-    task.close()  # Close the task to free resources
-
-def on_spacebar_press(event):
-    """Triggered when the space bar is pressed."""
-    administer_water()
         
 def run_script(task_version, mouse_number):
     
@@ -97,7 +74,6 @@ visual_button.grid(row=0, column=0, columnspan=2)
 auditory_button = tk.Button(root, text="Auditory", command=lambda: create_task_buttons(root, 1, 'aud'))
 auditory_button.grid(row=0, column=2, columnspan=2)
 
-root.bind("<space>", on_spacebar_press)
 
 # Start the GUI event loop
 root.mainloop()
