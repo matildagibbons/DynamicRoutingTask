@@ -1,0 +1,2 @@
+call activate zro27
+python "\\allen\programs\mindscope\workgroups\dynamicrouting\DynamicRoutingTask\startTask.py" --rigName "NP3" --taskScript "\\allen\programs\mindscope\workgroups\dynamicrouting\DynamicRoutingTask\TaskControl.py"

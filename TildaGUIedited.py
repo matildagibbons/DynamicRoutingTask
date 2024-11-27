@@ -3,39 +3,38 @@ import subprocess
 import os
 import json
 import time
-from PyDAQmx import Task
+from PyDAQmx import Task, DAQmx_Val_Digital
 
 def administer_water():
     """Function to administer water to the mouse via NI-DAQ."""
-    # Create a task to send a signal to the NI-DAQ
     task = Task()
-    
-    # Create a digital output channel (this assumes your NI-DAQ card is properly configured)
-    # Replace 'Dev1/port0/line0' with the correct device and line name for your NI-DAQ card
-    task.create_digital_chan('Dev1/port0/line1', "WaterValve", Task.OUTPUT)
+
+    # Create a digital output channel on 'Dev1/port0/line1'
+    # Use the correct method CreateDOChan instead of create_digital_chan
+    task.CreateDOChan('Dev1/port0/line1', "WaterValve", DAQmx_Val_Digital)
 
     # Write a high signal (1) to output the water (turn on water valve)
-    task.write_digitals(1)  # This will send a signal to output 0 (change if needed)
+    task.WriteDigitalLines(1, 1, 10.0, DAQmx_Val_GroupByChannel, [1], None, None)  # Writes a 1 (high signal)
     print("Water administered.")
     
     time.sleep(1)  # Keep the valve open for 1 second
     
     # Write a low signal (0) to stop the water (turn off water valve)
-    task.write_digitals(0)  # Turn off the water valve
-    task.close()  # Close the task to free resources
-
+    task.WriteDigitalLines(1, 1, 10.0, DAQmx_Val_GroupByChannel, [0], None, None)  # Writes a 0 (low signal)
+    task.StopTask()  # Stop the task to free resources
+    task.ClearTask()  # Clear the task
+    
 def on_spacebar_press(event):
     """Triggered when the space bar is pressed."""
     administer_water()
         
 def run_script(task_version, mouse_number):
-    
     conda_env = "c:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\.conda" # Hardcoded Conda environment
     script_path = "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\DynamicRouting1.py"  # Hardcoded script path
     params_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\{task_version.lower()}"  # Construct parameters file path
     save_dir = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\{mouse_number}"
 
-# Create the directory if it doesn't exist
+    # Create the directory if it doesn't exist
     os.makedirs(save_dir, exist_ok=True)
     
     with open(params_file, 'r') as f:
@@ -97,6 +96,7 @@ visual_button.grid(row=0, column=0, columnspan=2)
 auditory_button = tk.Button(root, text="Auditory", command=lambda: create_task_buttons(root, 1, 'aud'))
 auditory_button.grid(row=0, column=2, columnspan=2)
 
+# Bind the spacebar to the administer_water function
 root.bind("<space>", on_spacebar_press)
 
 # Start the GUI event loop
