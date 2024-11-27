@@ -3,31 +3,37 @@ import subprocess
 import os
 import json
 import time
-from PyDAQmx import Task, DAQmx_Val_Digital
+from PyDAQmx import Task
+import numpy as np  # Import numpy to create arrays
 
 def administer_water():
     """Function to administer water to the mouse via NI-DAQ."""
     task = Task()
 
     # Create a digital output channel on 'Dev1/port0/line1'
-    # Use the correct method CreateDOChan instead of create_digital_chan
-    task.CreateDOChan('Dev1/port0/line1', "WaterValve", DAQmx_Val_Digital)
-
-    # Write a high signal (1) to output the water (turn on water valve)
-    task.WriteDigitalLines(1, 1, 10.0, DAQmx_Val_GroupByChannel, [1], None, None)  # Writes a 1 (high signal)
+    task.CreateDOChan('Dev1/port0/line1', "WaterValve", 0)  # 0 indicates a digital output channel
+    
+    # Prepare the signal data to write (1 for high signal, 0 for low)
+    data = np.zeros((1,), dtype=np.uint8)  # This will be a 1-element array for a single line
+    
+    # First, write a high signal (1) to output the water (turn on water valve)
+    data[0] = 1  # Set the value to 1 to send a high signal
+    task.WriteDigitalLines(1, 1, 10.0, None, data, None, None)  # Write the signal for 1 line
     print("Water administered.")
     
     time.sleep(1)  # Keep the valve open for 1 second
     
-    # Write a low signal (0) to stop the water (turn off water valve)
-    task.WriteDigitalLines(1, 1, 10.0, DAQmx_Val_GroupByChannel, [0], None, None)  # Writes a 0 (low signal)
+    # Now write a low signal (0) to stop the water (turn off water valve)
+    data[0] = 0  # Set the value to 0 to stop the water
+    task.WriteDigitalLines(1, 1, 10.0, None, data, None, None)  # Write the signal for 1 line
+    
     task.StopTask()  # Stop the task to free resources
     task.ClearTask()  # Clear the task
-    
+
 def on_spacebar_press(event):
     """Triggered when the space bar is pressed."""
     administer_water()
-        
+
 def run_script(task_version, mouse_number):
     conda_env = "c:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\.conda" # Hardcoded Conda environment
     script_path = "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\DynamicRouting1.py"  # Hardcoded script path
