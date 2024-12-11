@@ -29,21 +29,21 @@ def display_plots_in_gui(mouse_name):
 
     # Load and display the first plot
     img1 = Image.open(output_path1)
-    img1 = img1.resize((400, 300), Image.Resampling.LANCZOS)
+    img1 = img1.resize((800, 600 ), Image.Resampling.LANCZOS)
     tk_img1 = ImageTk.PhotoImage(img1)
 
     label1 = tk.Label(root, image=tk_img1)
     label1.image = tk_img1  # Keep reference to the image
-    label1.pack(padx=10, pady=10)
+    label1.grid(row=1, column= 1)
 
     # Load and display the second plot
     img2 = Image.open(output_path2)
-    img2 = img2.resize((400, 300), Image.Resampling.LANCZOS)
+    img2 = img2.resize((800, 600), Image.Resampling.LANCZOS)
     tk_img2 = ImageTk.PhotoImage(img2)
 
     label2 = tk.Label(root, image=tk_img2)
     label2.image = tk_img2  # Keep reference to the image
-    label2.pack(padx=10, pady=10)
+    label2.grid(row=1, column=2, padx=20)
     
 # Function to be called when the button is clicked
 def on_generate_button_click():
@@ -111,25 +111,26 @@ def run_notebook():
 # Create the Tkinter window
 root = tk.Tk()
 root.title("Behavior Analysis Tool")
+root.geometry("1400x800")  # Adjust the size as needed
 
-# Add an entry widget to input the mouse name
-mouse_name_label = tk.Label(root, text="Enter Mouse Name:")
-mouse_name_label.pack(padx=10, pady=10)
+# Set the background color of the main window to dark green
+root.config(bg="darkolivegreen4")
 
-mouse_name_entry = tk.Entry(root)
-mouse_name_entry.pack(padx=10, pady=10)
+label_mouse = tk.Label(root, text="Mouse Name:", font=("Arial", 25), bg="darkolivegreen4", fg="gray10")
+label_mouse.grid(row=2, column=3, padx=0, pady=(0,0))
+mouse_name_entry = tk.Entry(root, font=("Arial", 14), bg="white", fg="black")  # Light background for text entry
+mouse_name_entry.grid(row=2, column=3, padx=0, pady=(60,0))
 
-# Add a button to generate and display the plots
-generate_button = tk.Button(root, text="Display Plots", command=on_generate_button_click)
-generate_button.pack(padx=20, pady=20)
+# Create a button to generate and display the plots
+generate_button = tk.Button(root, text="Display Plots", command=on_generate_button_click, 
+                            width=20, height=5, font=("Loma", 25),
+                            padx=20, pady=20, bg="orchid2", fg="gray10", borderwidth=8,relief="groove")
+generate_button.grid(row=3, column=2, padx=20, pady=40)
 
-# Create and place the widgets
-tk.Label(root, text="Enter Mouse Name:").pack(padx=20, pady=10)
-mouse_name_entry = tk.Entry(root, width=40)
-mouse_name_entry.pack(padx=20, pady=10)
-
-run_button = tk.Button(root, text="Run Analysis", command=run_notebook)
-run_button.pack(padx=20, pady=20)
+run_button= tk.Button(root, text="Run Analysis", command=run_notebook, 
+                            width=20, height=5, font=("Loma", 25),
+                            padx=20, pady=20, bg="darkorange2", fg="gray10", borderwidth=8,relief="groove")
+run_button.grid(row=3, column=4, padx=20, pady=40)
 
 # Start the Tkinter event loop
 root.mainloop()

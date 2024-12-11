@@ -60,17 +60,17 @@ root = tk.Tk()
 root.title("Behavioral Task Runner")
 
 # Set the window size (width x height)
-root.geometry("1000x800")  # Adjust the size as needed
-root.resizable(True, True)  # Allow resizing the window
+root.geometry("1400x800")  # Adjust the size as needed
+
 
 # Set the background color of the main window to dark green
-root.config(bg="darkolivegreen")
+root.config(bg="darkolivegreen4")
 
 # Create entry field for typing in mouse number
-label_mouse = tk.Label(root, text="Mouse Number:", font=("Times New Roman", 25), bg="darkolivegreen", fg="gray10")
-label_mouse.grid(row=0, column=2, padx=20, pady=20)
+label_mouse = tk.Label(root, text="Mouse Number:", font=("Arial", 25), bg="darkolivegreen4", fg="gray10")
+label_mouse.grid(row=2, column=3, padx=0, pady=(0,0))
 entry_mouse = tk.Entry(root, font=("Arial", 14), bg="white", fg="black")  # Light background for text entry
-entry_mouse.grid(row=0, column=3, padx=20, pady=20)
+entry_mouse.grid(row=2, column=3, padx=0, pady=(60,0))
 
 def create_task_buttons(root, row, task_type):
     task_versions = get_task_versions(task_type)
@@ -86,11 +86,13 @@ def create_task_buttons(root, row, task_type):
             command=lambda version=task_version: run_script(version, entry_mouse.get()),
             width=20,  # Set a width (number of characters in the button)
             height=2,  # Set the height (rows of text in the button)
-            font=("Times New Roman", 14),  # Set a larger font
+            font=("Arial", 14),  # Set a larger font
             padx=10, pady=10,  # Add padding inside the button
-            bg="darkolivegreen", fg="white"  # Dark green background and white text
+            bg="black", fg="white",  # Dark green background and white text
+            borderwidth=8,  # Set the border width
+            relief="raised" 
         )
-        button.grid(row=row+i, column=0, columnspan=2, pady=10)
+        button.grid(row=row+i, column=3, padx=0, pady=(0,0))
 
 # Create buttons for selecting task type with larger spacing and font
 visual_button = tk.Button(
@@ -99,23 +101,26 @@ visual_button = tk.Button(
     command=lambda: create_task_buttons(root, 1, 'vis'),
     width=20,
     height=5,
-    font=("Times New Roman", 25),  # Larger font for the task type button
+    font=("Loma", 25),  # Larger font for the task type button
     padx=20, pady=20,
-    bg="brown4", fg="gray10"  # Dark green background and white text
+    bg="orchid2", fg="gray10",
+    borderwidth=8,  # Set the border width
+    relief="groove" # Dark green background and white text
 )
-visual_button.grid(row=1, column=1, columnspan=2, padx=40, pady=40)
-
+visual_button.grid(row=2, column=2, padx=20, pady=40)
 auditory_button = tk.Button(
     root,
     text="Auditory",
     command=lambda: create_task_buttons(root, 1, 'aud'),
     width=20,
     height=5,
-    font=("Times New Roman", 25),  # Larger font for the task type button
+    font=("Arial", 25),  # Larger font for the task type button
     padx=20, pady=20,
-    bg="darkorange4", fg="gray10"  # Dark green background and white text
+    bg="darkorange2", fg="gray10",
+    borderwidth=8,  # Set the border width
+    relief="groove"# Dark green background and white text
 )
-auditory_button.grid(row=1, column=3, columnspan=2, padx=40, pady=40)
+auditory_button.grid(row=2, column=4, padx=20, pady=40)
 
 # Create the "Water Reward" button
 water_button = tk.Button(
@@ -124,11 +129,13 @@ water_button = tk.Button(
     command=administer_water,  # Call the water administration function when clicked
     width=20,
     height=5,
-    font=("Times New Roman", 25),  # Larger font for visibility
+    font=("Arial", 25),  # Larger font for visibility
     padx=20, pady=20,
-    bg="orchid4", fg="gray10"  # Dark green background and white text
+    bg="deeppink3", fg="gray10",
+    borderwidth=8,  # Set the border width
+    relief="raised"# Dark green background and white text
 )
-water_button.grid(row=5, column=2, columnspan=2, pady=90)  # Position it in a new row
+water_button.grid(row=3, column=3, pady=100)  # Position it in a new row
 
 # Start the GUI event loop
 root.mainloop()
