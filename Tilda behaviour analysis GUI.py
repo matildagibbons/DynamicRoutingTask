@@ -24,7 +24,8 @@ def get_newest_file(mouse_name):
     return newest_file
 
 def save_mouse_name_to_file(mouse_name):
-    file_path = r'C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\Mouse name text files\\mouse_name.txt'
+    directory = r'C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\Mouse name text files\\'
+    file_path = os.path.join(directory, 'mouse_name.txt')
     try:
         with open(file_path, "w") as file:
             file.write(mouse_name)
@@ -35,17 +36,30 @@ def save_mouse_name_to_file(mouse_name):
 
 def run_notebook():
     mouse_name = mouse_name_entry.get().strip()
+    
     if not mouse_name:
         messagebox.showerror("Error", "Please enter a mouse name.")
         return
+
+    # Save the mouse name to a text file
+    save_mouse_name_to_file(mouse_name)
     
+    # Get the newest file path and save it
+    newest_file = get_newest_file(mouse_name)
+    if newest_file:
+        print(f"Newest file: {newest_file}")
+    else:
+        messagebox.showerror("Error", "No .hdf5 files found for the specified mouse.")
+        return
+    
+    # Command to execute the notebook
     notebook_command = f'jupyter nbconvert --execute --inplace "Behaviour analysis.ipynb"'
 
     try:
-            subprocess.run(notebook_command, check=True, shell=True)
-            messagebox.showinfo("Success", "Notebook executed successfully!")
+        subprocess.run(notebook_command, check=True, shell=True)
+        messagebox.showinfo("Success", "Notebook executed successfully!")
     except subprocess.CalledProcessError:
-            messagebox.showerror("Error", "Failed to execute the notebook.")
+        messagebox.showerror("Error", "Failed to execute the notebook.")
         
 
 # Create the main Tkinter window
