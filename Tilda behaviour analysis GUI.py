@@ -13,7 +13,7 @@ import os
 
 # Function to get the path where the image will be saved
 def get_image_path(mouse_name, plot_number):
-    base_path = "C:\Users\teenspirit\Desktop\Behavior\Tilda\Behavior data\Data\Saved graphs" 
+    base_path = "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\Saved graphs" 
     mouse_folder = os.path.join(base_path, mouse_name)  # Create a folder for each mouse
     os.makedirs(mouse_folder, exist_ok=True)  # Create the folder if it doesn't exist
 
