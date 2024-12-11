@@ -4,7 +4,7 @@ import os
 import subprocess
 
 def get_newest_file(mouse_name):
-    base_directory = r'C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data'  
+    base_directory = r'C:\Users\teenspirit\Desktop\Behavior\Tilda\Behavior data\Data'  # Change this to the correct base path
     mouse_folder = os.path.join(base_directory, mouse_name)
 
     # Check if the mouse folder exists
@@ -37,7 +37,7 @@ def run_notebook():
             file.write(newest_file)
         
         # Run the Jupyter notebook
-        notebook_command = f'jupyter nbconvert --execute --inplace "Tilda behaviour analysis noyebook.ipynb" --output "{text_file_path}"'
+        notebook_command = f'jupyter nbconvert --execute --inplace "Behaviour analysis.ipynb" --output "{text_file_path}"'
         
         try:
             subprocess.run(notebook_command, check=True, shell=True)
