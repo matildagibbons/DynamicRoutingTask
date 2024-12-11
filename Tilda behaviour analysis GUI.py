@@ -1,25 +1,31 @@
 import tkinter as tk
 from tkinter import messagebox
 import os
+import glob
 import subprocess
 
 def get_newest_file(mouse_name):
-    base_directory = r'C:\Users\teenspirit\Desktop\Behavior\Tilda\Behavior data\Data'  # Change this to the correct base path
-    mouse_folder = os.path.join(base_directory, mouse_name)
+    # Set the directory path based on the mouse name
+    directory = f'C:/Users/teenspirit/Desktop/Behavior/Tilda/Behavior data/Data/{mouse_name}'  # Adjust your directory path accordingly
+    
+    # Use glob to search for .hdf5 files in the specified directory
+    hdf5_files = glob.glob(os.path.join(directory, "*.hdf5"))
+    
+    if not hdf5_files:
+        return None  # No .hdf5 files found
+    
+    # Get the most recent file based on modification time
+    newest_file = max(hdf5_files, key=os.path.getmtime)
+    text_file_path = 'newest_file.txt'
+    with open(text_file_path, 'w') as file:
+        file.write(newest_file)
+    
+    # Return the path of the newest file (also saved in the text file)
+    return newest_file
 
-    # Check if the mouse folder exists
-    if not os.path.exists(mouse_folder):
-        messagebox.showerror("Error", f"Folder for mouse '{mouse_name}' not found!")
-        return None
-
-    # List all files in the directory and get the newest one
-    try:
-        files = [os.path.join(mouse_folder, f) for f in os.listdir(mouse_folder)]
-        newest_file = max(files, key=os.path.getctime)
-        return newest_file
-    except ValueError:
-        messagebox.showerror("Error", f"No files found for mouse '{mouse_name}'.")
-        return None
+def save_mouse_name_to_file(mouse_name):
+    with open("mouse_name.txt", "w") as file:
+        file.write(mouse_name)
 
 
 def run_notebook():
@@ -27,22 +33,13 @@ def run_notebook():
     if not mouse_name:
         messagebox.showerror("Error", "Please enter a mouse name.")
         return
+    
+    notebook_command = f'jupyter nbconvert --execute --inplace "Behaviour analysis.ipynb"'
 
-    # Get the newest file based on the mouse name
-    newest_file = get_newest_file(mouse_name)
-    if newest_file:
-        # Save the newest file path as a text file
-        text_file_path = 'newest_file.txt'
-        with open(text_file_path, 'w') as file:
-            file.write(newest_file)
-        
-        # Run the Jupyter notebook
-        notebook_command = f'jupyter nbconvert --execute --inplace "Behaviour analysis.ipynb" --output "{text_file_path}"'
-        
-        try:
+    try:
             subprocess.run(notebook_command, check=True, shell=True)
             messagebox.showinfo("Success", "Notebook executed successfully!")
-        except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError:
             messagebox.showerror("Error", "Failed to execute the notebook.")
         
 
