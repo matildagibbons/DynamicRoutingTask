@@ -21,7 +21,7 @@ def run_script(task_version, mouse_number):
     global is_task_running
     is_task_running = True  # Mark the task as running
 
-    conda_env = "c:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\.conda"
+    conda_env = "c:\\Users\\teenspirit\\.conda\\envs\\newerenv"
     script_path = "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\DynamicRouting1.py"
     params_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\{task_version.lower()}"
     save_dir = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\{mouse_number}"

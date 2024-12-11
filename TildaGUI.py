@@ -7,7 +7,7 @@ import time
         
 def run_script(task_version, mouse_number):
     
-    conda_env = "c:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\.conda" # Hardcoded Conda environment
+    conda_env = "c:\\Users\\teenspirit\\.conda\\envs\\newerenv" # Hardcoded Conda environment
     script_path = "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\DynamicRouting1.py"  # Hardcoded script path
     params_file = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\{task_version.lower()}"  # Construct parameters file path
     save_dir = f"C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\{mouse_number}"
@@ -39,6 +39,9 @@ def run_script(task_version, mouse_number):
     
     # Execute the command in a subprocess
     subprocess.run(full_cmd, shell=True)
+
+def new_func():
+    return "c:\\Users\\teenspirit\\.conda\\envs\\newerenv"
     
 
 def get_task_versions(task_type):
