@@ -24,8 +24,13 @@ def get_newest_file(mouse_name):
     return newest_file
 
 def save_mouse_name_to_file(mouse_name):
-    with open("mouse_name.txt", "w") as file:
-        file.write(mouse_name)
+    file_path = r'C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\Mouse name text files\\mouse_name.txt'
+    try:
+        with open(file_path, "w") as file:
+            file.write(mouse_name)
+        print(f"Mouse name '{mouse_name}' saved successfully.")
+    except Exception as e:
+        print(f"Error saving mouse name: {e}")
 
 
 def run_notebook():
