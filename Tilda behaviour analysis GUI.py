@@ -1,8 +1,25 @@
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import PhotoImage
 import os
 import glob
 import subprocess
+from PIL import Image, ImageTk
+
+# Function to display image in Tkinter
+def show_plot_in_gui(image_path):
+    try:
+        # Open the image file
+        img = Image.open(image_path)
+        img = img.resize((600, 400), Image.ANTIALIAS)  # Resize the image to fit the GUI window
+        img_tk = ImageTk.PhotoImage(img)
+
+        # Create a label to display the image
+        img_label = tk.Label(root, image=img_tk)
+        img_label.image = img_tk  # Keep a reference to avoid garbage collection
+        img_label.pack(padx=20, pady=20)
+    except Exception as e:
+        messagebox.showerror("Error", f"Could not display image: {e}")
 
 def get_newest_file(mouse_name):
     # Set the directory path based on the mouse name
