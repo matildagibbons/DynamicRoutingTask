@@ -273,6 +273,7 @@ class TaskControl():
                     print(d)
                     print(self.soundFilter.shape)  # Should now be a 1D array
                     print(self.soundSampleRate)    # Should be a scalar value (200000)
+                    print(self.soundFilter)
                 else:
                     raise ValueError(self.rigName + ' is not a recognized rig name')
                 
