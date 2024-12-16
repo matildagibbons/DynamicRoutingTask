@@ -268,9 +268,11 @@ class TaskControl():
                     soundFilterPath = r"C:\\Users\\teenspirit\Desktop\Behavior\\Tilda\Stimuli\\Tildas speaker calibration 12102024\\12102024_npx_spkr_1-60k_fs200k.mat"
                     import scipy.io
                     d = scipy.io.loadmat(soundFilterPath)
-                    self.soundSampleRate = d['Fs'][0]
-                    self.soundFilter = d['FILT'][0]
+                    self.soundSampleRate = d['Fs'][0, 0]
+                    self.soundFilter = d['FILT'][0].flatten()
                     print(d)
+                    print(self.soundFilter.shape)  # Should now be a 1D array
+                    print(self.soundSampleRate)    # Should be a scalar value (200000)
                 else:
                     raise ValueError(self.rigName + ' is not a recognized rig name')
                 
