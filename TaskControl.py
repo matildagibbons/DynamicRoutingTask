@@ -69,7 +69,7 @@ class TaskControl():
         self.frameSignalLine = None
         self.acquisitionSignalLine = None
         self.rewardSyncLine = None
-        self.soundMode = 'sound card' # 'sound card', or 'daq'
+        self.soundMode = 'daq' # 'sound card', or 'daq'
         self.soundNidaqDevice = None
         self.soundChannel = None
         self.optoNidaqDevice = None
