@@ -265,7 +265,7 @@ class TaskControl():
                     self.drawDiodeBox = True
                     self.diodeBoxSize = 120
                     self.diodeBoxPosition = (900,450)
-                    soundFilterPath = r"C:\Users\teenspirit\Desktop\Behavior\Tilda\Stimuli\Tildas speaker calibration 01252024\01252024_npx_spkrleft_31-80k_fs200k.mat"
+                    soundFilterPath = r"C:\\Users\\teenspirit\Desktop\Behavior\\Tilda\Stimuli\\Tildas speaker calibration 12102024\\12102024_npx_spkr_1-60k_fs200k.mat"
                     import scipy.io
                     d = scipy.io.loadmat(soundFilterPath)
                     self.soundSampleRate = d['Fs'][0]
