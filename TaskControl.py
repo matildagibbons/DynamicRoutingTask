@@ -270,6 +270,7 @@ class TaskControl():
                     d = scipy.io.loadmat(soundFilterPath)
                     self.soundSampleRate = d['Fs'][0]
                     self.soundFilter = d['FILT'][0]
+                    print(d)
                 else:
                     raise ValueError(self.rigName + ' is not a recognized rig name')
                 
