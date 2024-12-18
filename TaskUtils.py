@@ -116,7 +116,7 @@ def makeSoundArray(soundType,sampleRate,dur,hanningDur,vol,freq,AM=None,seed=Non
         soundArray = 2 * rng.random(t.size) - 1
      #might be messing with my code   b,a = scipy.signal.butter(10,freq,btype='bandpass',fs=sampleRate)
       #same  soundArray = scipy.signal.filtfilt(b,a,soundArray)
-        soundArray = np.ascontiguousarray(soundArray)
+        #again soundArray = np.ascontiguousarray(soundArray)
     if AM is not None and ~np.isnan(AM) and AM > 0:
         soundArray *= (np.sin(1.5*np.pi + 2*np.pi*AM*t) + 1) / 2
     elif hanningDur > 0:
