@@ -104,6 +104,7 @@ def getGalvoWaveforms(sampleRate,x,y,dwellTime,nSamples):
 
 def makeSoundArray(soundType,sampleRate,dur,hanningDur,vol,freq,AM=None,seed=None):
     t = np.arange(0,dur,1/sampleRate)
+    soundArray = np.zeros(t.size)
     if soundType == 'tone':
         soundArray = np.sin(2 * np.pi * freq * t)
     elif soundType in ('linear sweep','log sweep'):
