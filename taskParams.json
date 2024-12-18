@@ -1,1 +1,11 @@
-{"subjectName": "", "rigName": "Tilda", "taskVersion": "None", "saveSoundArray": false, "optoParamsPath": null, "savePath": "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\VisRFTest.hdf5"}
+{
+    "subjectName": "Subjecttesting",
+    "rigName": "Tilda",
+    "taskVersion": "None",
+    "saveSoundArray": false,
+    "optoParamsPath": null,
+    "savePath": "C:\\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Behavior data\\Data\\Subjecttesting\\Subjecttesting_20241218_150225.hdf5",
+    "maxFrames": 300,
+    "maxTrials": 100,
+    "maxBlocks": 6
+}
