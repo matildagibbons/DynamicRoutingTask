@@ -58,8 +58,8 @@ class RFMapping(TaskControl):
             self.amNoiseFreq = []
             self.toneFreq = []
             self.saveSoundArray = False
-        else:
-            raise ValueError(taskVersion + ' is not a recognized task version')
+      #  else:
+       #     raise ValueError(taskVersion + ' is not a recognized task version')
         
 
     def taskFlow(self):
