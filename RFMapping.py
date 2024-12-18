@@ -177,7 +177,8 @@ class RFMapping(TaskControl):
 
 if __name__ == "__main__":
     import sys,json
-    paramsPath = sys.argv[1]
+    paramsPath = "C:\Users\\teenspirit\\Desktop\\Behavior\\Tilda\\Stimuli\\Behaviour\\DynamicRoutingTask\\taskParams.json"
+   # paramsPath = sys.argv[1]
     with open(paramsPath,'r') as f:
         params = json.load(f)
     task = RFMapping(params)
