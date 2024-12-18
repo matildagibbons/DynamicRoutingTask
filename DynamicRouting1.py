@@ -68,7 +68,7 @@ class DynamicRouting1(TaskControl):
         self.incorrectTrialRepeats = 0 # maximum number of incorrect trial repeats
         self.incorrectTimeoutFrames = 0 # extended gray screen following incorrect trial
         self.incorrectTimeoutColor = 0 # -1 to 1
-        self.incorrectSound = None # None, 'tone', or 'noise' for sound played after incorrect trial
+        self.incorrectSound = 'noise' # None, 'tone', or 'noise' for sound played after incorrect trial
         self.incorrectSoundDur = 3 # seconds
         self.incorrectSoundVolume = 0.1 # 0-1
         self.incorrectSoundLevel = 68 # dB
