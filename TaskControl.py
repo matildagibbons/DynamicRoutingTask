@@ -739,8 +739,8 @@ class TaskControl():
         if self.soundMode == 'sound card':
             self._audioStream.fill_buffer(soundArray)
         elif self.soundMode == 'daq':
-            if self.soundFilter is not None:
-                soundArray = np.convolve(soundArray, self.soundFilter, 'same')
+          #  if self.soundFilter is not None:
+            #    soundArray = np.convolve(soundArray, self.soundFilter, 'same')
             if np.isnan(self.soundChannel[1]):
                 output = soundArray * 10
             else:
