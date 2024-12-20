@@ -615,6 +615,10 @@ class TaskControl():
         import sys
 
     def initDigitalEncoder(self):
+        print("Entering initDigitalEncoder method...")
+        sys.stdout.flush()
+
+
         try:
             print("Initializing digital encoder...")
             sys.stdout.flush()  # Ensure the output is printed immediately
