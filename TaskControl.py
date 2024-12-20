@@ -612,7 +612,7 @@ class TaskControl():
                 angleChange = 0
         return angleChange
             
-import sys
+        import sys
 
     def initDigitalEncoder(self):
         try:
