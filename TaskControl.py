@@ -54,7 +54,7 @@ class TaskControl():
         self.wheelPolarity = -1
         self.rotaryEncoder = 'digital' # 'digital', 'analog', or None
         self.rotaryEncoderCh = 1 # nidaq analog input channel
-        self.rotaryEncoderSerialPort = None # serial input from arduino for digital encoder
+        self.rotaryEncoderSerialPort = 'COM6' # serial input from arduino for digital encoder
         self.rotaryEncoderCountsPerRev = 8192 # digital pulses per revolution of encoder
         self.networkNidaqDevices = []
         self.behavNidaqDevice = None
@@ -255,7 +255,7 @@ class TaskControl():
                     self.gammaErrorPolicy = 'warn'
                     self.monSizePix = (1920,1200)
                     self.rotaryEncoder = 'Digital'
-                    self.rotaryEncoderSerialPort = 'COM4'
+                    self.rotaryEncoderSerialPort = 'COM6'
                     self.behavNidaqDevice = 'Dev1'
                     self.rewardLine = (0,1)
                     self.lickLine = (0,0)
@@ -612,43 +612,73 @@ class TaskControl():
                 angleChange = 0
         return angleChange
             
-            
     def initDigitalEncoder(self):
-        self._digitalEncoder = serial.Serial(port=self.rotaryEncoderSerialPort,baudrate=9600,timeout=0.5)
+    try:
+        # Attempt to initialize the serial connection with the encoder
+        print("Initializing digital encoder...")
+        self._digitalEncoder = serial.Serial(port=self.rotaryEncoderSerialPort, baudrate=9600, timeout=0.5)
+        print(f"Encoder initialized on port {self.rotaryEncoderSerialPort}")
 
-
-
-        # intialize arduino
-        for message,response in zip(('7','3','8'),('MDR0','STR','MDR0')):
+        # Initialize Arduino with specific messages and expected responses
+        for message, response in zip(('7', '3', '8'), ('MDR0', 'STR', 'MDR0')):
+            print(f"Sending message {message} to Arduino...")
             self._digitalEncoder.write(message.encode('utf8'))
+
+            # Wait for expected response
             for _ in range(1000):
                 val = self._digitalEncoder.readline()[:-2].decode('utf-8')
                 if response in val:
+                    print(f"Received expected response: {response}")
                     break
             else:
-                raise Exception('unable to initialize digital rotary encoder')
+                raise Exception(f"Unable to initialize digital rotary encoder. Failed to receive {response}")
 
-        # reset encoder count to zero
+        # Reset encoder count to zero
+        print("Resetting encoder count to zero...")
         self._digitalEncoder.write(b'2')
         count = 0
         val = self._digitalEncoder.readline()[:-2].decode('utf-8')
         c = int(val.split(';')[-1].split(':')[-1])
+        print(f"Initial encoder count: {c}")
+
+        # Ensure count is within valid range
         while c > 1000 or c < -1000:
             count += 1
             if count == 1000:
-                break
+                raise Exception("Failed to reset encoder count within 1000 attempts.")
+            print(f"Encoder count {c} is out of valid range. Retrying...")
             val = self._digitalEncoder.readline()[:-2].decode('utf-8')
             c = int(val.split(';')[-1].split(':')[-1])
+        print("Encoder count successfully reset.")
+    except Exception as e:
+        print(f"Error during encoder initialization: {e}")
+        
+ 
 
     
-    def readDigitalEncoder(self):
-        try:
-            r = self._digitalEncoder.readline()[:-2].decode('utf-8')
-            self.rotaryEncoderIndex.append(int(r.split(';')[-2].split(':')[-1]))
-            self.rotaryEncoderCount.append(int(r.split(';')[-1].split(':')[-1]))
-        except:
-            self.rotaryEncoderIndex.append(np.nan)
-            self.rotaryEncoderCount.append(np.nan)
+   def readDigitalEncoder(self):
+    try:
+        print("Reading data from digital encoder...")
+        r = self._digitalEncoder.readline()[:-2].decode('utf-8')
+        print(f"Raw encoder data: {r}")
+
+        # Split and extract the index and count from the encoder data
+        index_value = r.split(';')[-2].split(':')[-1]
+        count_value = r.split(';')[-1].split(':')[-1]
+
+        print(f"Parsed index: {index_value}, Parsed count: {count_value}")
+
+        # Append the parsed values
+        self.rotaryEncoderIndex.append(int(index_value))
+        self.rotaryEncoderCount.append(int(count_value))
+        print(f"Updated rotary encoder index: {self.rotaryEncoderIndex[-1]}")
+        print(f"Updated rotary encoder count: {self.rotaryEncoderCount[-1]}")
+    except Exception as e:
+        print(f"Error reading encoder data: {e}")
+        # In case of an error, append NaN values
+        self.rotaryEncoderIndex.append(np.nan)
+        self.rotaryEncoderCount.append(np.nan)
+        print("Appended NaN values due to error.")
 
 
     def initSolenoid(self):
