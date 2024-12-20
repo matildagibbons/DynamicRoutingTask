@@ -613,7 +613,7 @@ class TaskControl():
         return angleChange
             
     def initDigitalEncoder(self):
-        try:
+    try:
         # Attempt to initialize the serial connection with the encoder
         print("Initializing digital encoder...")
         self._digitalEncoder = serial.Serial(port=self.rotaryEncoderSerialPort, baudrate=9600, timeout=0.5)
@@ -652,11 +652,12 @@ class TaskControl():
         print("Encoder count successfully reset.")
     except Exception as e:
         print(f"Error during encoder initialization: {e}")
+
         
  
 
     
-   def readDigitalEncoder(self):
+    def readDigitalEncoder(self):
     try:
         print("Reading data from digital encoder...")
         r = self._digitalEncoder.readline()[:-2].decode('utf-8')
